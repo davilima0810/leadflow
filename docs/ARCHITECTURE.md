@@ -237,6 +237,8 @@ Official public URL shape:
 - Frontend: `/c/:companySlug/:flowSlug`
 - API: `GET /api/public-flows/:companySlug/:flowSlug`
 
+This URL shape is the first public routing mechanism. Future custom domains, such as `cliente.leadflow.com` or `orcamento.cliente.com.br`, should resolve to the same Company/Flow concepts without changing the domain model.
+
 For the MVP, user email is globally unique. The same email cannot initially belong to two different companies.
 
 Authenticated routes receive tenant context from the JWT strategy. The request context contains at least `userId`, `companyId`, and `role`. Future private operations must use this context for tenant-scoped queries.

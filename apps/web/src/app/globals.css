@@ -46,3 +46,246 @@ p {
   font-size: 1.125rem;
   line-height: 1.65;
 }
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #2f6fed;
+  outline-offset: 3px;
+}
+
+.public-flow-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 20px;
+  background:
+    radial-gradient(circle at top left, rgba(47, 111, 237, 0.12), transparent 32rem),
+    linear-gradient(135deg, #f7f8fa 0%, #eef2f7 100%);
+}
+
+.public-flow-panel {
+  width: min(100%, 680px);
+  min-height: min(720px, calc(100vh - 40px));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 28px;
+  padding: clamp(28px, 7vw, 56px);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(23, 32, 42, 0.12);
+}
+
+.intro-panel {
+  align-items: flex-start;
+}
+
+.question-panel {
+  justify-content: space-between;
+}
+
+.public-flow-eyebrow {
+  margin: 0;
+  color: #2f6fed;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.public-flow-panel h1 {
+  max-width: 12ch;
+  margin: 0;
+  color: #111827;
+  font-size: clamp(2rem, 11vw, 4rem);
+  line-height: 1;
+}
+
+.public-flow-panel p {
+  margin: 0;
+  color: #526071;
+}
+
+.public-flow-primary-button,
+.public-flow-secondary-button,
+.public-flow-text-button,
+.public-flow-back-button,
+.choice-button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.public-flow-primary-button {
+  align-self: flex-start;
+  padding: 0 22px;
+  background: #17202a;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.public-flow-primary-button:hover,
+.choice-button:hover {
+  transform: translateY(-1px);
+}
+
+.public-flow-secondary-button {
+  align-self: flex-start;
+  padding: 0 20px;
+  background: #eef2f7;
+  color: #17202a;
+  font-weight: 800;
+}
+
+.public-flow-text-button,
+.public-flow-back-button {
+  min-height: 40px;
+  padding: 0;
+  background: transparent;
+  color: #526071;
+  font-weight: 700;
+}
+
+.public-flow-text-button:hover,
+.public-flow-back-button:hover {
+  color: #17202a;
+}
+
+.public-flow-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #68778a;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.public-flow-progress {
+  height: 8px;
+  overflow: hidden;
+  background: #dde5ef;
+  border-radius: 999px;
+}
+
+.public-flow-progress span {
+  display: block;
+  height: 100%;
+  background: #2f6fed;
+  border-radius: inherit;
+  transition: width 180ms ease;
+}
+
+.question-content {
+  display: grid;
+  gap: 18px;
+}
+
+.public-flow-input,
+.public-flow-textarea {
+  width: 100%;
+  border: 1px solid #c8d1df;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #17202a;
+  font-size: 1.1rem;
+}
+
+.public-flow-input {
+  height: 56px;
+  padding: 0 16px;
+}
+
+.public-flow-textarea {
+  min-height: 144px;
+  resize: vertical;
+  padding: 14px 16px;
+  line-height: 1.5;
+}
+
+.choice-list {
+  display: grid;
+  gap: 12px;
+}
+
+.choice-list.compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.choice-button {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid #c8d1df;
+  background: #ffffff;
+  color: #17202a;
+  font-weight: 800;
+  text-align: left;
+}
+
+.choice-list.compact .choice-button {
+  text-align: center;
+}
+
+.choice-button[data-selected="true"] {
+  border-color: #2f6fed;
+  background: #eaf1ff;
+  color: #174ea6;
+}
+
+.public-flow-error {
+  color: #b42318;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.public-flow-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+@media (max-width: 520px) {
+  .public-flow-shell {
+    padding: 0;
+  }
+
+  .public-flow-panel {
+    min-height: 100vh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .public-flow-panel h1 {
+    max-width: 14ch;
+  }
+
+  .public-flow-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .public-flow-primary-button,
+  .public-flow-secondary-button {
+    width: 100%;
+  }
+
+  .public-flow-text-button {
+    align-self: center;
+  }
+}

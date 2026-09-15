@@ -10,13 +10,23 @@ Work incrementally. Do not implement broad product areas unless the task explici
 
 ## Stack
 
-- Frontend: Next.js, TypeScript.
-- Backend: NestJS, Node.js, TypeScript.
+- Monorepo: pnpm workspaces.
+- Frontend app: `apps/web`, Next.js, TypeScript, App Router.
+- Backend app: `apps/api`, NestJS, Node.js, TypeScript.
 - Database: PostgreSQL.
 - Local infrastructure: Docker and Docker Compose.
 - Future production: VPS and Nginx.
 
-Avoid Kubernetes, microservices, Kafka, RabbitMQ, Elasticsearch, WebSocket, Redis, AI, billing, and advanced automation until there is a concrete need.
+Avoid Nx, Turborepo, Kubernetes, microservices, Kafka, RabbitMQ, Elasticsearch, WebSocket, Redis, AI, billing, and advanced automation until there is a concrete need.
+
+## Repository Layout
+
+- `apps/web`: the only frontend application.
+- `apps/api`: the only backend application.
+- `packages`: reserved for truly shared code created only when there is a concrete need.
+- `docs`: product and technical documentation.
+
+Do not place application code outside `apps/web` or `apps/api`.
 
 ## Backend Guidelines
 
@@ -72,4 +82,4 @@ Prefer simple, shippable paths:
 - Linear flows before conditional branching.
 - Basic lead inbox before CRM features.
 - Docker Compose before complex infrastructure.
-- One backend and one frontend app before monorepo tooling complexity.
+- pnpm workspaces without additional monorepo tooling.

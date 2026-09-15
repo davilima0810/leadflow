@@ -23,9 +23,9 @@ Build the smallest useful product that lets a company publish a conversational q
 
 ### Phase 1 - Foundation
 
-- Create monorepo structure.
-- Configure backend with NestJS, TypeScript, validation, and environment handling.
-- Configure frontend with Next.js and TypeScript.
+- Create the pnpm workspace monorepo structure.
+- Configure `apps/api` with NestJS, TypeScript, validation, and environment handling.
+- Configure `apps/web` with Next.js, TypeScript, and App Router.
 - Add PostgreSQL through Docker Compose.
 - Define initial database schema and migration tooling.
 

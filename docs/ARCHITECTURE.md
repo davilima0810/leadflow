@@ -2,58 +2,139 @@
 
 ## Current Repository State
 
-The project currently contains empty folders:
+The project is in foundation mode. The official architecture is a simple monorepo using pnpm workspaces.
 
-- `backend/`
-- `frontend/`
-- `docs/`
+The main applications must live only in `apps/web` and `apps/api`.
 
-No frontend or backend framework is configured yet. No package manager, lockfile, Docker configuration, database schema, or application code was found.
-
-## Proposed Repository Structure
+## Official Repository Structure
 
 ```text
 leadflow/
-  backend/
-    src/
-      app.module.ts
-      main.ts
-      common/
-      config/
-      database/
-      modules/
-        auth/
-        companies/
-        users/
-        flows/
-        questions/
-        leads/
-        public-flows/
-    test/
-  frontend/
+  apps/
+    web/
+      src/
+        app/
+        components/
+        features/
+        lib/
+        styles/
+      public/
+    api/
+      src/
+        main.ts
+        app.module.ts
+        common/
+        config/
+        database/
+        modules/
+          auth/
+          companies/
+          users/
+          flows/
+          questions/
+          leads/
+          public-flows/
+      test/
+  packages/
+  docs/
+    PRODUCT.md
+    MVP.md
+    ARCHITECTURE.md
+    DATABASE.md
+  AGENTS.md
+  package.json
+  pnpm-workspace.yaml
+  docker-compose.yml
+  .env.example
+  .gitignore
+  README.md
+```
+
+## Workspace
+
+- Package manager: pnpm.
+- Workspace: pnpm workspaces.
+- Workspace configuration: `pnpm-workspace.yaml`.
+- Workspace packages:
+  - `apps/*`
+  - `packages/*`
+- Additional monorepo tooling: none initially.
+
+Do not add Nx or Turborepo at this stage. The monorepo should stay simple until there is a concrete need for extra tooling.
+
+## Applications
+
+### `apps/web`
+
+The frontend application lives exclusively in `apps/web`.
+
+Stack:
+
+- Next.js;
+- TypeScript;
+- App Router.
+
+Conceptual structure:
+
+```text
+apps/web/
+  src/
     app/
     components/
     features/
-      auth/
-      flows/
-      leads/
-      public-flow/
     lib/
     styles/
-  docs/
-  docker-compose.yml
-  AGENTS.md
+  public/
 ```
 
-## Backend Stack
+Future application areas:
 
-- Node.js
-- NestJS
-- TypeScript
-- PostgreSQL
-- Docker Compose for local infrastructure
+- login;
+- dashboard;
+- flows;
+- leads;
+- public flow at `/c/[slug]`.
 
-The ORM/migration tool still needs to be decided before implementation.
+Pages should stay thin. Domain UI should live under `src/features/*`, shared UI under `src/components/*`, and API/client utilities under `src/lib/*`.
+
+### `apps/api`
+
+The backend application lives exclusively in `apps/api`.
+
+Stack:
+
+- Node.js;
+- NestJS;
+- TypeScript.
+
+Conceptual structure:
+
+```text
+apps/api/
+  src/
+    main.ts
+    app.module.ts
+    common/
+    config/
+    database/
+    modules/
+      auth/
+      companies/
+      users/
+      flows/
+      questions/
+      leads/
+      public-flows/
+  test/
+```
+
+The business modules listed above represent the planned organization. Do not create them before they are needed by an implementation task.
+
+## Packages
+
+The `packages/` directory is reserved for code that is truly shared between applications.
+
+Do not create shared packages prematurely. When there is a concrete need to share types, schemas, validation logic, or configuration between `apps/web` and `apps/api`, create a focused package for that purpose.
 
 ## Backend Layering
 
@@ -65,7 +146,7 @@ Controller -> Service -> Repository -> Database
 
 Controllers should handle HTTP concerns only. Business rules belong in services. Repositories encapsulate persistence access. DTOs must be used for request and response boundaries.
 
-## Proposed Backend Modules
+## Planned Backend Modules
 
 ### `auth`
 
@@ -140,35 +221,6 @@ All tenant-owned data must be scoped by `companyId`, including:
 
 Public flow routes may resolve a company through a published flow slug, but they must expose only public-safe data.
 
-## Frontend Organization
-
-Use Next.js with feature-oriented folders:
-
-```text
-frontend/
-  app/
-    login/
-    dashboard/
-    flows/
-    leads/
-    c/[slug]/
-  components/
-    ui/
-    layout/
-  features/
-    auth/
-    flows/
-    leads/
-    public-flow/
-  lib/
-    api/
-    auth/
-    formatting/
-  styles/
-```
-
-Keep API access centralized in `lib/api`. Keep page components thin and move domain UI into `features/*`.
-
 ## Security Baseline
 
 - Validate all DTOs.
@@ -182,9 +234,7 @@ Keep API access centralized in `lib/api`. Keep page components thin and move dom
 
 ## Decisions Needed Before Implementation
 
-- Package manager: npm, pnpm, or yarn.
 - ORM/migration tool: Prisma or TypeORM are the likely candidates.
 - Auth approach: JWT in httpOnly cookies, server sessions, or another strategy.
-- Monorepo tooling: simple separate apps first, or workspace tooling.
 - UI library/design system: custom components, shadcn/ui, or another option.
-- Deployment shape for the first VPS: single Docker Compose stack with frontend, backend, PostgreSQL, and later Nginx.
+- Deployment shape for the first VPS: single Docker Compose stack with `apps/web`, `apps/api`, PostgreSQL, and later Nginx.

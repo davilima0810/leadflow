@@ -14,14 +14,19 @@
 
 ## Current Implemented Schema
 
-The first implemented migration contains only:
+The implemented schema currently contains:
 
 - `companies`;
 - `users`;
 - `UserRole`;
 - `UserStatus`.
+- `flows`;
+- `questions`;
+- `question_options`;
+- `FlowStatus`;
+- `QuestionType`.
 
-Flow, Question, Lead, and related tables are still planned, but not implemented yet.
+Lead and LeadAnswer tables are still planned, but not implemented yet.
 
 ## Initial Entities
 
@@ -64,6 +69,7 @@ Suggested statuses:
 - `company_id`
 - `name`
 - `slug`
+- `description`
 - `status`
 - `created_at`
 - `updated_at`
@@ -72,7 +78,8 @@ Suggested statuses:
 
 - `DRAFT`
 - `PUBLISHED`
-- `ARCHIVED`
+
+`flows.slug` is unique per Company through `company_id + slug`, not globally unique.
 
 ### questions
 
@@ -86,6 +93,8 @@ Suggested statuses:
 - `help_text`
 - `created_at`
 - `updated_at`
+
+Questions are returned ordered by `position`. Reorder is performed through an atomic update scoped to the parent Flow and Company.
 
 Suggested types:
 
@@ -109,6 +118,8 @@ Suggested types:
 - `position`
 - `created_at`
 - `updated_at`
+
+QuestionOptions are returned ordered by `position` and are deleted by cascade when their parent Question is deleted.
 
 ### leads
 
@@ -142,22 +153,14 @@ Store `question_label` as a snapshot so historical leads remain readable if a qu
 Company
   has many Users
   has many Flows
-  has many Leads
 
 Flow
   belongs to Company
   has many Questions
-  has many Leads
 
 Question
   belongs to Flow
   has many QuestionOptions
-  has many LeadAnswers
-
-Lead
-  belongs to Company
-  belongs to Flow
-  has many LeadAnswers
 ```
 
 ## Future Conditional Logic
@@ -184,9 +187,7 @@ Recommended initial constraints:
 
 - unique `companies.slug`;
 - unique `users.email`;
-- unique `flows.slug`;
-- unique `questions(flow_id, position)`;
-- unique `question_options(question_id, position)`.
+- unique `flows(company_id, slug)`.
 
 Recommended indexes:
 
@@ -198,5 +199,3 @@ Recommended indexes:
 - `leads.flow_id`;
 - `lead_answers.lead_id`;
 - `lead_answers.question_id`.
-
-If public URLs use `leadflow.com/c/:slug`, `flows.slug` should be globally unique. If URLs later include company slug and flow slug, uniqueness can become `company_id + slug`.

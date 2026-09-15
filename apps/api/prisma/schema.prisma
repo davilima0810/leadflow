@@ -17,6 +17,24 @@ enum UserStatus {
   INACTIVE
 }
 
+enum FlowStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum QuestionType {
+  TEXT
+  TEXTAREA
+  NUMBER
+  PHONE
+  EMAIL
+  DATE
+  TIME
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  BOOLEAN
+}
+
 model Company {
   id            String   @id @default(uuid()) @db.Uuid
   name          String
@@ -26,6 +44,7 @@ model Company {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   users User[]
+  flows Flow[]
 
   @@map("companies")
 }
@@ -45,4 +64,55 @@ model User {
 
   @@index([companyId])
   @@map("users")
+}
+
+model Flow {
+  id          String     @id @default(uuid()) @db.Uuid
+  companyId   String     @map("company_id") @db.Uuid
+  name        String
+  slug        String
+  description String?
+  status      FlowStatus @default(DRAFT)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  questions Question[]
+
+  @@unique([companyId, slug])
+  @@index([companyId])
+  @@map("flows")
+}
+
+model Question {
+  id          String       @id @default(uuid()) @db.Uuid
+  flowId      String       @map("flow_id") @db.Uuid
+  label       String
+  description String?
+  type        QuestionType
+  required    Boolean      @default(false)
+  position    Int
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  flow    Flow             @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  options QuestionOption[]
+
+  @@index([flowId])
+  @@map("questions")
+}
+
+model QuestionOption {
+  id         String   @id @default(uuid()) @db.Uuid
+  questionId String   @map("question_id") @db.Uuid
+  label      String
+  value      String
+  position   Int
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@map("question_options")
 }

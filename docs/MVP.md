@@ -42,6 +42,7 @@ Build the smallest useful product that lets a company publish a conversational q
 - CRUD for questions.
 - CRUD for question options.
 - Publish/unpublish flow.
+- Reorder questions.
 - Public flow lookup by slug.
 
 ### Phase 4 - Public Conversation

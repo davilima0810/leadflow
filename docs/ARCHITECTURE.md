@@ -176,6 +176,7 @@ Initial authentication uses short-lived JWT Bearer tokens. Refresh tokens, cooki
 - Authenticated flow management.
 - Publish/unpublish.
 - Slug management.
+- Tenant-scoped flow reads and writes.
 
 ### `questions`
 
@@ -183,6 +184,7 @@ Initial authentication uses short-lived JWT Bearer tokens. Refresh tokens, cooki
 - Question ordering.
 - Question options.
 - Question type validation.
+- Atomic question reorder within a flow.
 
 ### `public-flows`
 
@@ -232,6 +234,8 @@ For the MVP, user email is globally unique. The same email cannot initially belo
 
 Authenticated routes receive tenant context from the JWT strategy. The request context contains at least `userId`, `companyId`, and `role`. Future private operations must use this context for tenant-scoped queries.
 
+Private Flow and Question operations must use `CurrentUser.companyId`. Flow slugs are unique per Company, not globally unique. Question operations must validate ownership through the parent Flow and Company.
+
 ## Security Baseline
 
 - Validate all DTOs.
@@ -244,6 +248,7 @@ Authenticated routes receive tenant context from the JWT strategy. The request c
 - Avoid exposing internal database models directly.
 - Never return `passwordHash` in API responses.
 - Register creates Company and the first ADMIN User atomically.
+- Publishing a Flow currently requires at least one Question.
 
 ## Decisions Needed Before Implementation
 

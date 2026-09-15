@@ -154,8 +154,11 @@ Controllers should handle HTTP concerns only. Business rules belong in services.
 
 - Login.
 - Password handling.
-- JWT/session strategy.
+- Argon2 password hashing.
+- JWT Bearer access token authentication.
 - Auth guards.
+
+Initial authentication uses short-lived JWT Bearer tokens. Refresh tokens, cookies, OAuth, password reset, and complete RBAC are intentionally out of scope for the current MVP stage.
 
 ### `companies`
 
@@ -227,6 +230,8 @@ Public flow routes may resolve a company through a published flow slug, but they
 
 For the MVP, user email is globally unique. The same email cannot initially belong to two different companies.
 
+Authenticated routes receive tenant context from the JWT strategy. The request context contains at least `userId`, `companyId`, and `role`. Future private operations must use this context for tenant-scoped queries.
+
 ## Security Baseline
 
 - Validate all DTOs.
@@ -237,9 +242,10 @@ For the MVP, user email is globally unique. The same email cannot initially belo
 - Enforce tenant isolation in services/repositories.
 - Validate public submissions by flow and question definitions.
 - Avoid exposing internal database models directly.
+- Never return `passwordHash` in API responses.
+- Register creates Company and the first ADMIN User atomically.
 
 ## Decisions Needed Before Implementation
 
-- Auth approach: JWT in httpOnly cookies, server sessions, or another strategy.
 - UI library/design system: custom components, shadcn/ui, or another option.
 - Deployment shape for the first VPS: single Docker Compose stack with `apps/web`, `apps/api`, PostgreSQL, and later Nginx.

@@ -1,9 +1,16 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const envPath = resolve(__dirname, "../../../.env");
+const envPaths = [
+  resolve(__dirname, "../../.env"),
+  resolve(__dirname, "../../../.env")
+];
 
-try {
+for (const envPath of envPaths) {
+  if (!existsSync(envPath)) {
+    continue;
+  }
+
   const envFile = readFileSync(envPath, "utf8");
 
   for (const line of envFile.split("\n")) {
@@ -24,9 +31,4 @@ try {
 
     process.env[key] ??= value;
   }
-} catch {
-  // Tests may run in environments that inject DATABASE_URL directly.
 }
-
-process.env.JWT_SECRET ??= "test-jwt-secret";
-process.env.JWT_EXPIRES_IN ??= "1h";

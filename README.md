@@ -68,6 +68,8 @@ POSTGRES_DB=leadflow
 POSTGRES_USER=leadflow
 POSTGRES_PASSWORD=leadflow_dev_password
 DATABASE_URL=postgresql://leadflow:leadflow_dev_password@localhost:5432/leadflow
+JWT_SECRET=change-me-in-development
+JWT_EXPIRES_IN=1h
 ```
 
 Do not commit real secrets.
@@ -103,6 +105,9 @@ Local URLs:
 
 - Web: http://localhost:3000
 - API health: http://localhost:3001/api/health
+- API auth register: POST http://localhost:3001/api/auth/register
+- API auth login: POST http://localhost:3001/api/auth/login
+- API auth me: GET http://localhost:3001/api/auth/me
 - PostgreSQL: localhost:5432
 
 ## Scripts
@@ -118,4 +123,6 @@ pnpm test      # runs workspace tests
 
 ## Current Scope
 
-This repository currently contains only the technical foundation. Product features such as authentication, flows, leads, WhatsApp links, ORM models, and migrations are intentionally not implemented yet.
+This repository currently contains the technical foundation, the initial Prisma schema for Company/User, and API authentication through Argon2 password hashing and JWT Bearer access tokens.
+
+Refresh tokens, cookies, frontend auth screens, flows, leads, and WhatsApp features are intentionally not implemented yet.

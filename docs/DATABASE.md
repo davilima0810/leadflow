@@ -10,6 +10,7 @@
 - Prisma is the official ORM for the LeadFlow API.
 - Repositories encapsulate Prisma access.
 - For the MVP, `users.email` is globally unique across all companies.
+- Passwords are stored only as Argon2 hashes in `users.password_hash`.
 
 ## Current Implemented Schema
 
@@ -44,6 +45,8 @@ Flow, Question, Lead, and related tables are still planned, but not implemented 
 - `status`
 - `created_at`
 - `updated_at`
+
+`password_hash` must never be returned by API responses.
 
 Suggested roles:
 

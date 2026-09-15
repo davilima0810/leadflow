@@ -109,6 +109,8 @@ Local URLs:
 - API auth login: POST http://localhost:3001/api/auth/login
 - API auth me: GET http://localhost:3001/api/auth/me
 - API flows: http://localhost:3001/api/flows
+- API public flow: GET http://localhost:3001/api/public-flows/:companySlug/:flowSlug
+- Future public frontend URL: http://localhost:3000/c/:companySlug/:flowSlug
 - PostgreSQL: localhost:5432
 
 ## Scripts
@@ -124,6 +126,6 @@ pnpm test      # runs workspace tests
 
 ## Current Scope
 
-This repository currently contains the technical foundation, the Prisma schema for Company/User/Flow/Question/QuestionOption, API authentication through Argon2 password hashing and JWT Bearer access tokens, and private tenant-scoped Flow/Question management endpoints.
+This repository currently contains the technical foundation, the Prisma schema for Company/User/Flow/Question/QuestionOption, API authentication through Argon2 password hashing and JWT Bearer access tokens, private tenant-scoped Flow/Question management endpoints, and read-only public flow lookup for published flows.
 
-Refresh tokens, cookies, frontend auth screens, public flow answering, leads, and WhatsApp features are intentionally not implemented yet.
+Refresh tokens, cookies, frontend auth screens, public flow answering, leads, rate limiting, and WhatsApp features are intentionally not implemented yet.

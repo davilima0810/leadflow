@@ -93,7 +93,7 @@ Future application areas:
 - dashboard;
 - flows;
 - leads;
-- public flow at `/c/[slug]`.
+- public flow at `/c/[companySlug]/[flowSlug]`.
 
 Pages should stay thin. Domain UI should live under `src/features/*`, shared UI under `src/components/*`, and API/client utilities under `src/lib/*`.
 
@@ -188,9 +188,11 @@ Initial authentication uses short-lived JWT Bearer tokens. Refresh tokens, cooki
 
 ### `public-flows`
 
-- Public flow lookup by slug.
+- Public flow lookup by `companySlug + flowSlug`.
 - Public answer submission.
 - Public DTO validation.
+
+The public Flow API is a separate boundary from private Flow management. It does not require JWT and currently exposes only published flows through `GET /api/public-flows/:companySlug/:flowSlug`. Draft flows return `404` publicly.
 
 ### `leads`
 
@@ -230,6 +232,11 @@ All tenant-owned data must be scoped by `companyId`, including:
 
 Public flow routes may resolve a company through a published flow slug, but they must expose only public-safe data.
 
+Official public URL shape:
+
+- Frontend: `/c/:companySlug/:flowSlug`
+- API: `GET /api/public-flows/:companySlug/:flowSlug`
+
 For the MVP, user email is globally unique. The same email cannot initially belong to two different companies.
 
 Authenticated routes receive tenant context from the JWT strategy. The request context contains at least `userId`, `companyId`, and `role`. Future private operations must use this context for tenant-scoped queries.
@@ -249,6 +256,7 @@ Private Flow and Question operations must use `CurrentUser.companyId`. Flow slug
 - Never return `passwordHash` in API responses.
 - Register creates Company and the first ADMIN User atomically.
 - Publishing a Flow currently requires at least one Question.
+- Public routes should receive production-grade abuse protection before launch if no upstream protection exists.
 
 ## Decisions Needed Before Implementation
 

@@ -43,10 +43,11 @@ Build the smallest useful product that lets a company publish a conversational q
 - CRUD for question options.
 - Publish/unpublish flow.
 - Reorder questions.
-- Public flow lookup by slug.
+- Public flow lookup by `companySlug + flowSlug`.
 
 ### Phase 4 - Public Conversation
 
+- Public flow URL at `/c/:companySlug/:flowSlug`.
 - Public conversational UI.
 - Answer validation by question type.
 - Lead and lead answer creation.

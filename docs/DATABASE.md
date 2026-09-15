@@ -24,9 +24,9 @@ The implemented schema currently contains:
 - `questions`;
 - `question_options`;
 - `FlowStatus`;
-- `QuestionType`.
-
-Lead and LeadAnswer tables are still planned, but not implemented yet.
+- `QuestionType`;
+- `leads`;
+- `lead_answers`.
 
 ## Initial Entities
 
@@ -126,26 +126,25 @@ QuestionOptions are returned ordered by `position` and are deleted by cascade wh
 - `id`
 - `company_id`
 - `flow_id`
-- `name`
-- `phone`
-- `email`
-- `summary`
-- `source`
 - `created_at`
 - `updated_at`
 
-`name`, `phone`, and `email` may be derived from answers when the flow contains matching question types.
+`Lead` is the submission envelope. It intentionally does not store fixed semantic fields such as `name`, `email`, or `phone` yet. Those values remain regular `LeadAnswer` records because each Flow can ask different questions for different niches.
 
 ### lead_answers
 
 - `id`
 - `lead_id`
 - `question_id`
-- `question_label`
-- `answer_value`
+- `value`
 - `created_at`
 
-Store `question_label` as a snapshot so historical leads remain readable if a question label changes later.
+`value` is stored as JSON to support all MVP question answer shapes with a simple model:
+
+- strings for text, textarea, phone, email, date, time, and single choice;
+- numbers for number questions;
+- booleans for boolean questions;
+- string arrays for multiple choice questions.
 
 ## Conceptual Relationships
 
@@ -153,14 +152,22 @@ Store `question_label` as a snapshot so historical leads remain readable if a qu
 Company
   has many Users
   has many Flows
+  has many Leads
 
 Flow
   belongs to Company
   has many Questions
+  has many Leads
 
 Question
   belongs to Flow
   has many QuestionOptions
+  has many LeadAnswers
+
+Lead
+  belongs to Company
+  belongs to Flow
+  has many LeadAnswers
 ```
 
 ## Future Conditional Logic

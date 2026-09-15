@@ -35,6 +35,14 @@ describe("PublicFlowsController", () => {
   });
 
   afterAll(async () => {
+    await prisma.lead.deleteMany({
+      where: {
+        companyId: {
+          in: createdCompanyIds
+        }
+      }
+    });
+
     await prisma.flow.deleteMany({
       where: {
         companyId: {
@@ -251,6 +259,130 @@ describe("PublicFlowsController", () => {
 
     await request(app.getHttpServer())
       .get("/api/public-flows/company-ok/Invalid_Flow")
+      .expect(400);
+  });
+
+  it("creates a lead submission for a published flow", async () => {
+    const company = await createCompany("submission");
+    const flow = await createFlowWithQuestions(
+      company.id,
+      `submission-${testRunId}`,
+      FlowStatus.PUBLISHED
+    );
+    const flowWithQuestions = await prisma.flow.findUniqueOrThrow({
+      where: {
+        id: flow.id
+      },
+      include: {
+        questions: {
+          include: {
+            options: true
+          },
+          orderBy: {
+            position: "asc"
+          }
+        }
+      }
+    });
+    const choiceQuestion = flowWithQuestions.questions[0];
+    const textQuestion = flowWithQuestions.questions[1];
+
+    const response = await request(app.getHttpServer())
+      .post(`/api/public-flows/${company.slug}/${flow.slug}/submissions`)
+      .send({
+        answers: [
+          {
+            questionId: choiceQuestion.id,
+            value: "carro"
+          },
+          {
+            questionId: textQuestion.id,
+            value: "Observação livre"
+          }
+        ]
+      })
+      .expect(201);
+
+    expect(response.body).toMatchObject({
+      status: "created"
+    });
+    expect(response.body.id).toEqual(expect.any(String));
+
+    const lead = await prisma.lead.findUniqueOrThrow({
+      where: {
+        id: response.body.id
+      },
+      include: {
+        answers: {
+          orderBy: {
+            createdAt: "asc"
+          }
+        }
+      }
+    });
+
+    expect(lead.companyId).toBe(company.id);
+    expect(lead.flowId).toBe(flow.id);
+    expect(lead.answers).toHaveLength(2);
+    expect(lead.answers.map((answer) => answer.questionId)).toEqual(
+      expect.arrayContaining([choiceQuestion.id, textQuestion.id])
+    );
+  });
+
+  it("rejects invalid public submissions", async () => {
+    const company = await createCompany("invalid-submission");
+    const flow = await createFlowWithQuestions(
+      company.id,
+      `invalid-submission-${testRunId}`,
+      FlowStatus.PUBLISHED
+    );
+    const flowWithQuestions = await prisma.flow.findUniqueOrThrow({
+      where: {
+        id: flow.id
+      },
+      include: {
+        questions: {
+          orderBy: {
+            position: "asc"
+          }
+        }
+      }
+    });
+    const requiredQuestion = flowWithQuestions.questions[0];
+
+    await request(app.getHttpServer())
+      .post(`/api/public-flows/${company.slug}/${flow.slug}/submissions`)
+      .send({
+        answers: []
+      })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .post(`/api/public-flows/${company.slug}/${flow.slug}/submissions`)
+      .send({
+        answers: [
+          {
+            questionId: requiredQuestion.id,
+            value: "aviao"
+          }
+        ]
+      })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .post(`/api/public-flows/${company.slug}/${flow.slug}/submissions`)
+      .send({
+        answers: [
+          {
+            questionId: requiredQuestion.id,
+            value: "carro"
+          },
+          {
+            questionId: requiredQuestion.id,
+            value: "moto"
+          }
+        ]
+      })
       .expect(400);
   });
 });

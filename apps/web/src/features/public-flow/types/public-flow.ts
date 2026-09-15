@@ -42,3 +42,15 @@ export type PublicFlow = {
 };
 
 export type PublicFlowAnswer = string | number | boolean | string[] | null;
+
+export type PublicFlowSubmissionPayload = {
+  answers: Array<{
+    questionId: string;
+    value: Exclude<PublicFlowAnswer, null>;
+  }>;
+};
+
+export type PublicFlowSubmissionResponse = {
+  id: string;
+  status: "created";
+};

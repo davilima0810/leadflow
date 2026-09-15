@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   getPublicFlow,
   PublicFlowNotFoundError
 } from "../lib/get-public-flow";
+import { submitPublicFlow } from "../lib/submit-public-flow";
 import type {
   PublicFlow,
   PublicFlowAnswer,
-  PublicFlowQuestion
+  PublicFlowQuestion,
+  PublicFlowSubmissionResponse
 } from "../types/public-flow";
 import { QuestionRenderer } from "./question-renderer";
 
@@ -29,6 +31,11 @@ export function PublicFlowExperience({
   const [screen, setScreen] = useState<ScreenState>("intro");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, PublicFlowAnswer>>({});
+  const answersRef = useRef<Record<string, PublicFlowAnswer>>({});
+  const [submission, setSubmission] =
+    useState<PublicFlowSubmissionResponse | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionMessage, setSubmissionMessage] = useState("");
   const [validationMessage, setValidationMessage] = useState("");
 
   useEffect(() => {
@@ -67,14 +74,19 @@ export function PublicFlowExperience({
 
   function updateAnswer(questionId: string, value: PublicFlowAnswer) {
     setValidationMessage("");
+    setSubmissionMessage("");
     setAnswers((currentAnswers) => ({
       ...currentAnswers,
       [questionId]: value
     }));
+    answersRef.current = {
+      ...answersRef.current,
+      [questionId]: value
+    };
   }
 
   function hasAnswer(question: PublicFlowQuestion) {
-    const value = answers[question.id];
+    const value = answersRef.current[question.id];
 
     if (!question.required) {
       return true;
@@ -95,9 +107,44 @@ export function PublicFlowExperience({
     return typeof value === "string" && value.trim().length > 0;
   }
 
+  async function submitAnswers() {
+    if (!flow || isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmissionMessage("");
+
+    try {
+      const response = await submitPublicFlow(companySlug, flowSlug, {
+        answers: Object.entries(answersRef.current)
+          .filter(([, value]) => {
+            if (Array.isArray(value)) {
+              return value.length > 0;
+            }
+
+            return value !== null && value !== "";
+          })
+          .map(([questionId, value]) => ({
+            questionId,
+            value: value as Exclude<PublicFlowAnswer, null>
+          }))
+      });
+
+      setSubmission(response);
+      setScreen("done");
+    } catch {
+      setSubmissionMessage(
+        "Não foi possível finalizar agora. Confira suas respostas e tente novamente."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   function goNext() {
     if (!currentQuestion) {
-      setScreen("done");
+      void submitAnswers();
       return;
     }
 
@@ -109,7 +156,7 @@ export function PublicFlowExperience({
     setValidationMessage("");
 
     if (currentIndex >= questions.length - 1) {
-      setScreen("done");
+      void submitAnswers();
       return;
     }
 
@@ -120,7 +167,7 @@ export function PublicFlowExperience({
     setValidationMessage("");
 
     if (currentIndex >= questions.length - 1) {
-      setScreen("done");
+      void submitAnswers();
       return;
     }
 
@@ -200,7 +247,10 @@ export function PublicFlowExperience({
         <section className="public-flow-panel">
           <p className="public-flow-eyebrow">{flow.company.name}</p>
           <h1>Tudo pronto!</h1>
-          <p>Suas respostas estão preenchidas.</p>
+          <p>Recebemos suas respostas. A empresa já pode acessar este lead.</p>
+          {submission ? (
+            <p className="public-flow-muted">Protocolo: {submission.id}</p>
+          ) : null}
           <button
             className="public-flow-secondary-button"
             type="button"
@@ -261,6 +311,12 @@ export function PublicFlowExperience({
               {validationMessage}
             </p>
           ) : null}
+
+          {submissionMessage ? (
+            <p className="public-flow-error" role="alert">
+              {submissionMessage}
+            </p>
+          ) : null}
         </div>
 
         <div className="public-flow-actions">
@@ -279,10 +335,11 @@ export function PublicFlowExperience({
           {showContinueButton ? (
             <button
               className="public-flow-primary-button"
+              disabled={isSubmitting}
               type="button"
               onClick={goNext}
             >
-              Continuar
+              {isSubmitting ? "Enviando..." : "Continuar"}
             </button>
           ) : null}
         </div>

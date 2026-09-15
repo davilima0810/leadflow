@@ -114,6 +114,11 @@ textarea:focus-visible {
   color: #526071;
 }
 
+.public-flow-muted {
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
 .public-flow-primary-button,
 .public-flow-secondary-button,
 .public-flow-text-button,
@@ -141,6 +146,12 @@ textarea:focus-visible {
 .public-flow-primary-button:hover,
 .choice-button:hover {
   transform: translateY(-1px);
+}
+
+.public-flow-primary-button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+  transform: none;
 }
 
 .public-flow-secondary-button {

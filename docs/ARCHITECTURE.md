@@ -192,7 +192,9 @@ Initial authentication uses short-lived JWT Bearer tokens. Refresh tokens, cooki
 - Public answer submission.
 - Public DTO validation.
 
-The public Flow API is a separate boundary from private Flow management. It does not require JWT and currently exposes only published flows through `GET /api/public-flows/:companySlug/:flowSlug`. Draft flows return `404` publicly.
+The public Flow API is a separate boundary from private Flow management. It does not require JWT and exposes only published flows through `GET /api/public-flows/:companySlug/:flowSlug`. Draft flows return `404` publicly.
+
+Public submissions use `POST /api/public-flows/:companySlug/:flowSlug/submissions`. The backend resolves Company and Flow from the URL, validates answers against the current published Flow definition, and creates Lead plus LeadAnswer records atomically.
 
 ### `leads`
 
@@ -236,6 +238,7 @@ Official public URL shape:
 
 - Frontend: `/c/:companySlug/:flowSlug`
 - API: `GET /api/public-flows/:companySlug/:flowSlug`
+- API submission: `POST /api/public-flows/:companySlug/:flowSlug/submissions`
 
 This URL shape is the first public routing mechanism. Future custom domains, such as `cliente.leadflow.com` or `orcamento.cliente.com.br`, should resolve to the same Company/Flow concepts without changing the domain model.
 

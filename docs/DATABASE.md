@@ -5,8 +5,22 @@
 - `company_id` is the tenant boundary for company-owned records.
 - Private queries must always be scoped by authenticated `company_id`.
 - Public routes must only expose published flow data required to answer a flow.
-- Use migrations from the beginning.
+- Use Prisma migrations from the beginning.
 - Prefer simple relational modeling before adding advanced workflow abstractions.
+- Prisma is the official ORM for the LeadFlow API.
+- Repositories encapsulate Prisma access.
+- For the MVP, `users.email` is globally unique across all companies.
+
+## Current Implemented Schema
+
+The first implemented migration contains only:
+
+- `companies`;
+- `users`;
+- `UserRole`;
+- `UserStatus`.
+
+Flow, Question, Lead, and related tables are still planned, but not implemented yet.
 
 ## Initial Entities
 
@@ -27,8 +41,19 @@
 - `email`
 - `password_hash`
 - `role`
+- `status`
 - `created_at`
 - `updated_at`
+
+Suggested roles:
+
+- `ADMIN`
+- `MEMBER`
+
+Suggested statuses:
+
+- `ACTIVE`
+- `INACTIVE`
 
 ### flows
 

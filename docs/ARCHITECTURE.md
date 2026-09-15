@@ -105,7 +105,9 @@ Stack:
 
 - Node.js;
 - NestJS;
-- TypeScript.
+- TypeScript;
+- Prisma ORM;
+- PostgreSQL.
 
 Conceptual structure:
 
@@ -203,8 +205,10 @@ Controllers should handle HTTP concerns only. Business rules belong in services.
 ### `database`
 
 - Database connection.
-- Migrations.
+- Prisma migrations.
 - Repository providers.
+
+Prisma must stay encapsulated in the persistence layer. Controllers must not access Prisma directly. Services should depend on explicit repositories, such as `CompanyRepository` and `UserRepository`, instead of knowing Prisma APIs.
 
 ## Multi-Tenancy Rule
 
@@ -221,6 +225,8 @@ All tenant-owned data must be scoped by `companyId`, including:
 
 Public flow routes may resolve a company through a published flow slug, but they must expose only public-safe data.
 
+For the MVP, user email is globally unique. The same email cannot initially belong to two different companies.
+
 ## Security Baseline
 
 - Validate all DTOs.
@@ -234,7 +240,6 @@ Public flow routes may resolve a company through a published flow slug, but they
 
 ## Decisions Needed Before Implementation
 
-- ORM/migration tool: Prisma or TypeORM are the likely candidates.
 - Auth approach: JWT in httpOnly cookies, server sessions, or another strategy.
 - UI library/design system: custom components, shadcn/ui, or another option.
 - Deployment shape for the first VPS: single Docker Compose stack with `apps/web`, `apps/api`, PostgreSQL, and later Nginx.

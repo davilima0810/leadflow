@@ -7,6 +7,7 @@ const config: Config = {
   transform: {
     "^.+\\.(t|j)s$": "ts-jest"
   },
+  setupFiles: ["<rootDir>/test/jest.env.ts"],
   collectCoverageFrom: ["src/**/*.(t|j)s"],
   testEnvironment: "node"
 };

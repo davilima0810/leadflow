@@ -58,6 +58,7 @@ Create a local `.env` from the example:
 
 ```sh
 cp .env.example .env
+cp .env.example apps/api/.env
 ```
 
 Development variables:

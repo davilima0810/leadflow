@@ -60,7 +60,9 @@ Build the smallest useful product that lets a company publish a conversational q
 - Lead detail view.
 - Basic filtering by flow and creation date.
 
-The first Lead Inbox should stay simple: `/login`, `/leads`, and `/leads/:id`. Lead detail includes ordered answers, deterministic summary, and a `wa.me` link when the Company has `whatsapp_phone` configured. The current WhatsApp destination is the Company's configured number, not an inferred visitor phone.
+The first Lead Inbox should stay simple: `/login`, `/leads`, and `/leads/:id`. Lead detail includes ordered answers, deterministic summary, and a `wa.me` link when the Flow has a `CONTACT_PHONE` question answered by the visitor.
+
+Contact identity is explicit through `Question.semanticType`. The initial semantic types are `CONTACT_NAME`, `CONTACT_PHONE`, and `CONTACT_EMAIL`, in addition to `NONE`. If no `CONTACT_PHONE` exists for the Lead, the Lead remains viewable but the WhatsApp action is unavailable.
 
 ## Non-Goals For MVP
 

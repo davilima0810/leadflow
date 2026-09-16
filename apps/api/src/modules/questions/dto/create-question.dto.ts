@@ -10,7 +10,7 @@ import {
   Min,
   ValidateNested
 } from "class-validator";
-import { QuestionType } from "@prisma/client";
+import { QuestionSemanticType, QuestionType } from "@prisma/client";
 import { QuestionOptionDto } from "./question-option.dto";
 
 export class CreateQuestionDto {
@@ -24,6 +24,10 @@ export class CreateQuestionDto {
 
   @IsEnum(QuestionType)
   type!: QuestionType;
+
+  @IsOptional()
+  @IsEnum(QuestionSemanticType)
+  semanticType?: QuestionSemanticType;
 
   @IsOptional()
   @IsBoolean()

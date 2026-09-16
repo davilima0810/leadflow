@@ -135,6 +135,8 @@ This repository currently contains the technical foundation, the Prisma schema f
 
 The private frontend currently uses a small browser-side token helper with localStorage for the MVP pilot. Review this before public production hardening.
 
-Lead detail generates a deterministic summary from the stored answers and exposes a `wa.me` link when `Company.whatsappPhone` is configured. The current WhatsApp destination is the Company's configured number; visitor phone detection is intentionally deferred.
+`Question.type` defines the answer format. `Question.semanticType` defines contact meaning and currently supports `NONE`, `CONTACT_NAME`, `CONTACT_PHONE`, and `CONTACT_EMAIL`.
+
+Lead detail derives contact fields from LeadAnswers and their Question semantic types. It generates a deterministic summary and exposes a `wa.me` link when the Lead has a `CONTACT_PHONE` answer. Phone normalization keeps only digits and does not add a country code automatically.
 
 Refresh tokens, cookies, password reset, public signup UI, rate limiting, official WhatsApp Business API integration, and advanced CRM features are intentionally not implemented yet.

@@ -20,6 +20,7 @@ export function toFlowResponse(flow: FlowResponseInput) {
       label: question.label,
       description: question.description,
       type: question.type,
+      semanticType: question.semanticType,
       required: question.required,
       position: question.position,
       createdAt: question.createdAt,

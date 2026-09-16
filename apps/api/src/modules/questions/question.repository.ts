@@ -1,5 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import type { Prisma, Question, QuestionOption } from "@prisma/client";
+import type {
+  Prisma,
+  Question,
+  QuestionOption,
+  QuestionSemanticType
+} from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
 
 export type QuestionWithOptions = Question & {
@@ -16,6 +21,7 @@ type UpdateQuestionInput = {
   label?: string;
   description?: string | null;
   type?: Prisma.QuestionUpdateInput["type"];
+  semanticType?: Prisma.QuestionUpdateInput["semanticType"];
   required?: boolean;
   position?: number;
 };
@@ -153,6 +159,28 @@ export class QuestionRepository {
     return this.prisma.question.count({
       where: {
         flowId,
+        flow: {
+          companyId
+        }
+      }
+    });
+  }
+
+  countByFlowIdCompanyIdAndSemanticType(
+    flowId: string,
+    companyId: string,
+    semanticType: QuestionSemanticType,
+    ignoreQuestionId?: string
+  ): Promise<number> {
+    return this.prisma.question.count({
+      where: {
+        flowId,
+        semanticType,
+        id: ignoreQuestionId
+          ? {
+              not: ignoreQuestionId
+            }
+          : undefined,
         flow: {
           companyId
         }

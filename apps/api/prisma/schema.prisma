@@ -35,6 +35,13 @@ enum QuestionType {
   BOOLEAN
 }
 
+enum QuestionSemanticType {
+  NONE
+  CONTACT_NAME
+  CONTACT_PHONE
+  CONTACT_EMAIL
+}
+
 model Company {
   id            String   @id @default(uuid()) @db.Uuid
   name          String
@@ -92,6 +99,7 @@ model Question {
   label       String
   description String?
   type        QuestionType
+  semanticType QuestionSemanticType @default(NONE) @map("semantic_type")
   required    Boolean      @default(false)
   position    Int
   createdAt   DateTime     @default(now()) @map("created_at")

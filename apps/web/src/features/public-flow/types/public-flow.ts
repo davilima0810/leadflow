@@ -10,6 +10,12 @@ export type QuestionType =
   | "MULTIPLE_CHOICE"
   | "BOOLEAN";
 
+export type QuestionSemanticType =
+  | "NONE"
+  | "CONTACT_NAME"
+  | "CONTACT_PHONE"
+  | "CONTACT_EMAIL";
+
 export type PublicFlowOption = {
   id: string;
   label: string;
@@ -22,6 +28,7 @@ export type PublicFlowQuestion = {
   label: string;
   description: string | null;
   type: QuestionType;
+  semanticType: QuestionSemanticType;
   required: boolean;
   position: number;
   options: PublicFlowOption[];

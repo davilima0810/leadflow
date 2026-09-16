@@ -25,6 +25,7 @@ The implemented schema currently contains:
 - `question_options`;
 - `FlowStatus`;
 - `QuestionType`;
+- `QuestionSemanticType`;
 - `leads`;
 - `lead_answers`.
 
@@ -87,6 +88,7 @@ Suggested statuses:
 - `flow_id`
 - `label`
 - `type`
+- `semantic_type`
 - `required`
 - `position`
 - `placeholder`
@@ -109,6 +111,24 @@ Suggested types:
 - `SINGLE_CHOICE`
 - `MULTIPLE_CHOICE`
 
+`questions.type` defines the technical answer format. `questions.semantic_type` defines what the answer represents for business use.
+
+Initial semantic types:
+
+- `NONE`
+- `CONTACT_NAME`
+- `CONTACT_PHONE`
+- `CONTACT_EMAIL`
+
+Compatibility rules:
+
+- `CONTACT_NAME` requires `TEXT`;
+- `CONTACT_PHONE` requires `PHONE`;
+- `CONTACT_EMAIL` requires `EMAIL`;
+- `NONE` is valid for any question type.
+
+For the MVP, each Flow can have at most one question for each contact semantic type. Future semantic types may include examples such as budget, service, location, or company name, but they are intentionally not implemented yet.
+
 ### question_options
 
 - `id`
@@ -129,7 +149,7 @@ QuestionOptions are returned ordered by `position` and are deleted by cascade wh
 - `created_at`
 - `updated_at`
 
-`Lead` is the submission envelope. It intentionally does not store fixed semantic fields such as `name`, `email`, or `phone` yet. Those values remain regular `LeadAnswer` records because each Flow can ask different questions for different niches.
+`Lead` is the submission envelope. It intentionally does not store duplicated fixed semantic fields such as `name`, `email`, or `phone`. Those values are derived from `LeadAnswer` plus `Question.semanticType` when needed.
 
 ### lead_answers
 

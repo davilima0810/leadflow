@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import type {
-  Company,
   Flow,
   Lead,
   LeadAnswer,
@@ -10,11 +9,13 @@ import type {
 import { PrismaService } from "../../database/prisma.service";
 
 export type LeadDetailRecord = Lead & {
-  company: Pick<Company, "whatsappPhone">;
   flow: Pick<Flow, "id" | "name">;
   answers: Array<
     LeadAnswer & {
-      question: Pick<Question, "id" | "label" | "type" | "position"> & {
+      question: Pick<
+        Question,
+        "id" | "label" | "type" | "semanticType" | "position"
+      > & {
         options: Array<Pick<QuestionOption, "label" | "value" | "position">>;
       };
     }
@@ -52,11 +53,6 @@ export class LeadRepository {
 
   private detailInclude() {
     return {
-      company: {
-        select: {
-          whatsappPhone: true
-        }
-      },
       flow: {
         select: {
           id: true,
@@ -75,6 +71,7 @@ export class LeadRepository {
               id: true,
               label: true,
               type: true,
+              semanticType: true,
               position: true,
               options: {
                 orderBy: {

@@ -25,6 +25,7 @@ type QuestionResponse = {
   flowId: string;
   label: string;
   type: string;
+  semanticType: string;
   required: boolean;
   position: number;
   options: Array<{
@@ -326,6 +327,115 @@ describe("FlowsController", () => {
       .patch(`/api/flows/${firstFlow.id}/questions/reorder`)
       .set("Authorization", `Bearer ${session.accessToken}`)
       .send({ questionIds: [firstQuestion.id, otherQuestion.id] })
+      .expect(400);
+  });
+
+  it("supports semantic contact types with compatibility rules and NONE default", async () => {
+    const session = await createSession("semantic");
+    const flow = await createFlow(session, `semantic-${testRunId}`);
+
+    const normalQuestion = await addQuestion(session, flow.id, {
+      label: "Observação",
+      type: "TEXT",
+      position: 1
+    });
+
+    expect(normalQuestion.semanticType).toBe("NONE");
+
+    await addQuestion(session, flow.id, {
+      label: "Como podemos te chamar?",
+      type: "TEXT",
+      semanticType: "CONTACT_NAME",
+      position: 2
+    });
+
+    await addQuestion(session, flow.id, {
+      label: "Qual seu WhatsApp?",
+      type: "PHONE",
+      semanticType: "CONTACT_PHONE",
+      position: 3
+    });
+
+    await addQuestion(session, flow.id, {
+      label: "Qual seu email?",
+      type: "EMAIL",
+      semanticType: "CONTACT_EMAIL",
+      position: 4
+    });
+
+    await request(app.getHttpServer())
+      .post(`/api/flows/${flow.id}/questions`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({
+        label: "Telefone incompatível",
+        type: "TEXT",
+        semanticType: "CONTACT_PHONE",
+        position: 5
+      })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .post(`/api/flows/${flow.id}/questions`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({
+        label: "Email duplicado",
+        type: "EMAIL",
+        semanticType: "CONTACT_EMAIL",
+        position: 6
+      })
+      .expect(409);
+
+    const response = await request(app.getHttpServer())
+      .get(`/api/flows/${flow.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .expect(200);
+
+    expect(
+      response.body.questions.map((question: QuestionResponse) => question.semanticType)
+    ).toEqual(["NONE", "CONTACT_NAME", "CONTACT_PHONE", "CONTACT_EMAIL"]);
+  });
+
+  it("allows editing a question keeping its own semanticType and rejects conflicts", async () => {
+    const session = await createSession("semantic-edit");
+    const flow = await createFlow(session, `semantic-edit-${testRunId}`);
+    const phoneQuestion = await addQuestion(session, flow.id, {
+      label: "WhatsApp",
+      type: "PHONE",
+      semanticType: "CONTACT_PHONE",
+      position: 1
+    });
+    const emailQuestion = await addQuestion(session, flow.id, {
+      label: "Email",
+      type: "EMAIL",
+      semanticType: "CONTACT_EMAIL",
+      position: 2
+    });
+
+    await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}/questions/${phoneQuestion.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({
+        label: "WhatsApp principal",
+        semanticType: "CONTACT_PHONE"
+      })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}/questions/${emailQuestion.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({
+        type: "PHONE",
+        semanticType: "CONTACT_PHONE"
+      })
+      .expect(409);
+
+    await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}/questions/${emailQuestion.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({
+        type: "TEXT",
+        semanticType: "CONTACT_EMAIL"
+      })
       .expect(400);
   });
 

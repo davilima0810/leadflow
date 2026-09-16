@@ -16,6 +16,7 @@ export function toPublicFlowResponse(flow: PublicFlowRecord) {
         label: question.label,
         description: question.description,
         type: question.type,
+        semanticType: question.semanticType,
         required: question.required,
         position: question.position,
         options: question.options.map((option) => ({

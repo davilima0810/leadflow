@@ -77,6 +77,22 @@ export function LeadDetailView({ leadId }: LeadDetailViewProps) {
         {loadState === "success" && lead ? (
           <div className="lead-detail-grid">
             <section className="private-panel answer-panel">
+              <div className="contact-summary">
+                <h2>{lead.contact.name ?? "Contato não identificado"}</h2>
+                {lead.contact.phone ? <p>{lead.contact.phone}</p> : null}
+                {lead.contact.email ? <p>{lead.contact.email}</p> : null}
+                {lead.whatsappUrl ? (
+                  <a
+                    className="private-primary-button"
+                    href={lead.whatsappUrl}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Conversar no WhatsApp
+                  </a>
+                ) : null}
+              </div>
+
               <h2>Respostas</h2>
               <div className="answer-list">
                 {lead.answers.map((answer) => (
@@ -91,18 +107,7 @@ export function LeadDetailView({ leadId }: LeadDetailViewProps) {
             <aside className="private-panel summary-panel">
               <h2>Resumo</h2>
               <pre>{lead.summary}</pre>
-              {lead.whatsappUrl ? (
-                <a
-                  className="private-primary-button"
-                  href={lead.whatsappUrl}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  Abrir no WhatsApp
-                </a>
-              ) : (
-                <p>WhatsApp não configurado para esta empresa.</p>
-              )}
+              {!lead.whatsappUrl ? <p>Telefone do lead não identificado.</p> : null}
             </aside>
           </div>
         ) : null}

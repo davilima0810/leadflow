@@ -186,7 +186,10 @@ The initial frontend login stores the JWT in a small browser-side auth helper so
 - Question ordering.
 - Question options.
 - Question type validation.
+- Contact semantic type validation.
 - Atomic question reorder within a flow.
+
+`Question.type` defines the technical answer format. `Question.semanticType` defines the business meaning of the answer. Initial semantic types are `NONE`, `CONTACT_NAME`, `CONTACT_PHONE`, and `CONTACT_EMAIL`. Semantic contact types are explicit and must not be inferred from question labels.
 
 ### `public-flows`
 
@@ -209,7 +212,9 @@ Private Lead routes use `CurrentUser.companyId` for every query. `GET /api/leads
 
 Lead summaries are generated deterministically from Flow name, Questions, and LeadAnswers. The summary is not persisted while it remains cheap to derive.
 
-WhatsApp uses `wa.me` links with URL-encoded summary text. The destination is `Company.whatsappPhone`, representing the company or seller number for the first MVP cycle. Lead visitor phone detection remains a future semantic-field decision.
+Lead contact fields are derived from LeadAnswers whose Questions use contact semantic types. They are not duplicated into the Lead table.
+
+WhatsApp uses `wa.me` links with URL-encoded summary text. The destination is the normalized `CONTACT_PHONE` answer from the Lead when available. Phone normalization for the MVP keeps only digits and does not add a country code automatically, preserving international flexibility. `Company.whatsappPhone` remains available for future configuration, notification, fallback, or integration needs, but it is not used as the "Conversar com lead" destination.
 
 ### `common`
 

@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException
 } from "@nestjs/common";
-import { QuestionType } from "@prisma/client";
+import { QuestionSemanticType, QuestionType } from "@prisma/client";
 import type { AuthenticatedUser } from "../auth/types/authenticated-user";
 import { CreateQuestionDto } from "../questions/dto/create-question.dto";
 import { ReorderQuestionsDto } from "../questions/dto/reorder-questions.dto";
@@ -19,6 +19,12 @@ const CHOICE_TYPES = [
   QuestionType.SINGLE_CHOICE,
   QuestionType.MULTIPLE_CHOICE
 ] as const;
+
+const SEMANTIC_TYPE_ALLOWED_QUESTION_TYPE = {
+  [QuestionSemanticType.CONTACT_NAME]: QuestionType.TEXT,
+  [QuestionSemanticType.CONTACT_PHONE]: QuestionType.PHONE,
+  [QuestionSemanticType.CONTACT_EMAIL]: QuestionType.EMAIL
+} as const;
 
 @Injectable()
 export class FlowsService {
@@ -115,6 +121,13 @@ export class FlowsService {
   ) {
     await this.ensureFlowExists(flowId, currentUser.companyId);
     this.validateOptions(dto.type, dto.options);
+    const semanticType = dto.semanticType ?? QuestionSemanticType.NONE;
+    await this.validateSemanticType(
+      flowId,
+      currentUser.companyId,
+      dto.type,
+      semanticType
+    );
 
     const question = await this.questionRepository.create({
       flowId,
@@ -122,6 +135,7 @@ export class FlowsService {
         label: dto.label,
         description: dto.description,
         type: dto.type,
+        semanticType,
         required: dto.required ?? false,
         position: dto.position
       },
@@ -152,6 +166,7 @@ export class FlowsService {
     }
 
     const nextType = dto.type ?? currentQuestion.type;
+    const nextSemanticType = dto.semanticType ?? currentQuestion.semanticType;
     let nextOptions = dto.options;
 
     if (dto.type || dto.options) {
@@ -162,6 +177,14 @@ export class FlowsService {
       nextOptions = [];
     }
 
+    await this.validateSemanticType(
+      flowId,
+      currentUser.companyId,
+      nextType,
+      nextSemanticType,
+      questionId
+    );
+
     const question = await this.questionRepository.update(
       questionId,
       flowId,
@@ -170,6 +193,7 @@ export class FlowsService {
         label: dto.label,
         description: dto.description,
         type: dto.type,
+        semanticType: dto.semanticType,
         required: dto.required,
         position: dto.position
       },
@@ -231,6 +255,7 @@ export class FlowsService {
       label: question.label,
       description: question.description,
       type: question.type,
+      semanticType: question.semanticType,
       required: question.required,
       position: question.position,
       createdAt: question.createdAt,
@@ -302,5 +327,39 @@ export class FlowsService {
 
   private isChoiceType(type: QuestionType) {
     return CHOICE_TYPES.includes(type as (typeof CHOICE_TYPES)[number]);
+  }
+
+  private async validateSemanticType(
+    flowId: string,
+    companyId: string,
+    type: QuestionType,
+    semanticType: QuestionSemanticType,
+    ignoreQuestionId?: string
+  ) {
+    if (semanticType === QuestionSemanticType.NONE) {
+      return;
+    }
+
+    const allowedType = SEMANTIC_TYPE_ALLOWED_QUESTION_TYPE[semanticType];
+
+    if (type !== allowedType) {
+      throw new BadRequestException(
+        "semanticType não é compatível com o type da pergunta."
+      );
+    }
+
+    const existingCount =
+      await this.questionRepository.countByFlowIdCompanyIdAndSemanticType(
+        flowId,
+        companyId,
+        semanticType,
+        ignoreQuestionId
+      );
+
+    if (existingCount > 0) {
+      throw new ConflictException(
+        "Este semanticType já está em uso neste flow."
+      );
+    }
   }
 }

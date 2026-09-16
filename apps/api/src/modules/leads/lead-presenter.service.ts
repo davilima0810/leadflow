@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { QuestionSemanticType } from "@prisma/client";
 import type { QuestionType } from "@prisma/client";
 import type { LeadDetailRecord } from "./lead.repository";
 
@@ -29,11 +30,14 @@ export class LeadPresenterService {
         questionId: answer.questionId,
         question: answer.question.label,
         type: answer.question.type,
+        semanticType: answer.question.semanticType,
         value: answer.value,
         displayValue
       };
     });
+    const contact = this.getContact(lead.answers);
     const summary = this.buildSummary(lead.flow.name, answers);
+    const normalizedContactPhone = this.normalizePhone(contact.phone);
 
     return {
       id: lead.id,
@@ -42,10 +46,11 @@ export class LeadPresenterService {
         id: lead.flow.id,
         name: lead.flow.name
       },
+      contact,
       answers,
       summary,
-      whatsappUrl: lead.company.whatsappPhone
-        ? this.buildWhatsappUrl(lead.company.whatsappPhone, summary)
+      whatsappUrl: normalizedContactPhone
+        ? this.buildWhatsappUrl(normalizedContactPhone, summary, contact.name)
         : null
     };
   }
@@ -66,10 +71,54 @@ export class LeadPresenterService {
     ].join("\n");
   }
 
-  private buildWhatsappUrl(phone: string, summary: string) {
+  private buildWhatsappUrl(
+    phone: string,
+    summary: string,
+    contactName: string | null
+  ) {
+    const greeting = contactName ? `Olá, ${contactName}! Tudo bem?` : "Olá! Tudo bem?";
+
     return `https://wa.me/${phone}?text=${encodeURIComponent(
-      `Novo lead - LeadFlow\n\n${summary}`
+      `${greeting}\n\nRecebemos suas informações pelo nosso formulário.\n\n${summary}\n\nPodemos continuar o atendimento por aqui?`
     )}`;
+  }
+
+  private getContact(answers: LeadDetailRecord["answers"]) {
+    return answers.reduce(
+      (contact, answer) => {
+        if (
+          answer.question.semanticType === QuestionSemanticType.CONTACT_NAME &&
+          typeof answer.value === "string"
+        ) {
+          contact.name = answer.value;
+        }
+
+        if (
+          answer.question.semanticType === QuestionSemanticType.CONTACT_PHONE &&
+          typeof answer.value === "string"
+        ) {
+          contact.phone = answer.value;
+        }
+
+        if (
+          answer.question.semanticType === QuestionSemanticType.CONTACT_EMAIL &&
+          typeof answer.value === "string"
+        ) {
+          contact.email = answer.value;
+        }
+
+        return contact;
+      },
+      {
+        name: null,
+        phone: null,
+        email: null
+      } as { name: string | null; phone: string | null; email: string | null }
+    );
+  }
+
+  private normalizePhone(phone: string | null) {
+    return phone?.replace(/\D/g, "") || null;
   }
 
   private getDisplayValue(

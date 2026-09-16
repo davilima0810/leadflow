@@ -103,14 +103,29 @@ describe("LeadsController", () => {
             {
               label: "Qual seu nome?",
               type: "TEXT",
+              semanticType: "CONTACT_NAME",
               required: true,
               position: 1
+            },
+            {
+              label: "Qual seu WhatsApp?",
+              type: "PHONE",
+              semanticType: "CONTACT_PHONE",
+              required: true,
+              position: 2
+            },
+            {
+              label: "Qual seu email?",
+              type: "EMAIL",
+              semanticType: "CONTACT_EMAIL",
+              required: false,
+              position: 3
             },
             {
               label: "Qual veículo deseja?",
               type: "SINGLE_CHOICE",
               required: true,
-              position: 2,
+              position: 4,
               options: {
                 create: [
                   { label: "Carro", value: "carro", position: 1 },
@@ -122,7 +137,7 @@ describe("LeadsController", () => {
               label: "Quais extras?",
               type: "MULTIPLE_CHOICE",
               required: false,
-              position: 3,
+              position: 5,
               options: {
                 create: [
                   { label: "Seguro", value: "seguro", position: 1 },
@@ -152,7 +167,7 @@ describe("LeadsController", () => {
         answers: {
           create: [
             {
-              questionId: flow.questions[2].id,
+              questionId: flow.questions[4].id,
               value: ["seguro", "cadeira"]
             },
             {
@@ -161,6 +176,14 @@ describe("LeadsController", () => {
             },
             {
               questionId: flow.questions[1].id,
+              value: "+55 (86) 99999-9999"
+            },
+            {
+              questionId: flow.questions[2].id,
+              value: "davi@example.com"
+            },
+            {
+              questionId: flow.questions[3].id,
               value: "carro"
             }
           ]
@@ -200,7 +223,7 @@ describe("LeadsController", () => {
   });
 
   it("returns tenant-scoped lead detail with ordered answers, summary and whatsapp URL", async () => {
-    const companyA = await createSession("detail-a", "5586999999999");
+    const companyA = await createSession("detail-a", "5511999999999");
     const companyB = await createSession("detail-b", "5586888888888");
     const { lead } = await createLead(companyA, "detail");
 
@@ -222,9 +245,14 @@ describe("LeadsController", () => {
     });
     expect(
       response.body.answers.map((answer: { type: QuestionType }) => answer.type)
-    ).toEqual(["TEXT", "SINGLE_CHOICE", "MULTIPLE_CHOICE"]);
-    expect(response.body.answers[1].displayValue).toBe("Carro");
-    expect(response.body.answers[2].displayValue).toEqual([
+    ).toEqual(["TEXT", "PHONE", "EMAIL", "SINGLE_CHOICE", "MULTIPLE_CHOICE"]);
+    expect(response.body.contact).toEqual({
+      name: "Davi",
+      phone: "+55 (86) 99999-9999",
+      email: "davi@example.com"
+    });
+    expect(response.body.answers[3].displayValue).toBe("Carro");
+    expect(response.body.answers[4].displayValue).toEqual([
       "Seguro",
       "Cadeira infantil"
     ]);
@@ -233,14 +261,47 @@ describe("LeadsController", () => {
     expect(response.body.summary).toContain("Davi");
     expect(response.body.whatsappUrl).toContain("https://wa.me/5586999999999");
     expect(decodeURIComponent(response.body.whatsappUrl)).toContain(
-      "Novo lead - LeadFlow"
+      "Olá, Davi! Tudo bem?"
     );
+    expect(response.body.whatsappUrl).not.toContain("5511999999999");
     expect(JSON.stringify(response.body)).not.toContain("passwordHash");
   });
 
-  it("does not generate whatsapp URL when company has no whatsapp phone", async () => {
-    const company = await createSession("no-whatsapp");
-    const { lead } = await createLead(company, "no-whatsapp");
+  it("returns null contact fields and no whatsapp URL when lead has no semantic contact fields", async () => {
+    const company = await createSession("no-semantic", "5586999999999");
+    const flow = await prisma.flow.create({
+      data: {
+        companyId: company.companyId,
+        name: "Sem campos semânticos",
+        slug: `no-semantic-${testRunId}`,
+        status: "PUBLISHED",
+        questions: {
+          create: [
+            {
+              label: "Observação",
+              type: "TEXT",
+              required: true,
+              position: 1
+            }
+          ]
+        }
+      },
+      include: {
+        questions: true
+      }
+    });
+    const lead = await prisma.lead.create({
+      data: {
+        companyId: company.companyId,
+        flowId: flow.id,
+        answers: {
+          create: {
+            questionId: flow.questions[0].id,
+            value: "Sem telefone"
+          }
+        }
+      }
+    });
 
     const response = await request(app.getHttpServer())
       .get(`/api/leads/${lead.id}`)
@@ -248,6 +309,11 @@ describe("LeadsController", () => {
       .expect(200);
 
     expect(response.body.whatsappUrl).toBeNull();
+    expect(response.body.contact).toEqual({
+      name: null,
+      phone: null,
+      email: null
+    });
     expect(response.body.summary).toContain("Gerado pelo LeadFlow.");
   });
 });

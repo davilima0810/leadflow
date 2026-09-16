@@ -116,6 +116,7 @@ describe("PublicFlowsController", () => {
             {
               label: "Segunda pergunta",
               type: "TEXT",
+              semanticType: "CONTACT_NAME",
               required: false,
               position: 2
             },
@@ -173,6 +174,7 @@ describe("PublicFlowsController", () => {
       1,
       2
     ]);
+    expect(response.body.flow.questions[1].semanticType).toBe("CONTACT_NAME");
     expect(response.body.flow.questions[0].options.map((option: { position: number }) => option.position)).toEqual([
       1,
       2

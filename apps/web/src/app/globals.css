@@ -444,6 +444,18 @@ textarea:focus-visible {
   gap: 20px;
 }
 
+.contact-summary {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e6ebf2;
+}
+
+.contact-summary .private-primary-button {
+  width: fit-content;
+  margin-top: 8px;
+}
+
 .answer-item {
   padding-block: 14px;
   border-bottom: 1px solid #e6ebf2;
@@ -474,6 +486,10 @@ textarea:focus-visible {
 
   .private-primary-button,
   .private-secondary-button {
+    width: 100%;
+  }
+
+  .contact-summary .private-primary-button {
     width: 100%;
   }
 }

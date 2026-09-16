@@ -160,6 +160,8 @@ Controllers should handle HTTP concerns only. Business rules belong in services.
 
 Initial authentication uses short-lived JWT Bearer tokens. Refresh tokens, cookies, OAuth, password reset, and complete RBAC are intentionally out of scope for the current MVP stage.
 
+The initial frontend login stores the JWT in a small browser-side auth helper so the pilot can use private pages quickly. This storage strategy should be reviewed before public production hardening.
+
 ### `companies`
 
 - Company lifecycle.
@@ -202,6 +204,12 @@ Public submissions use `POST /api/public-flows/:companySlug/:flowSlug/submission
 - Lead details.
 - Lead summary generation.
 - WhatsApp message/link generation.
+
+Private Lead routes use `CurrentUser.companyId` for every query. `GET /api/leads` lists only Leads for the authenticated Company. `GET /api/leads/:id` returns `404` when the Lead does not belong to that Company.
+
+Lead summaries are generated deterministically from Flow name, Questions, and LeadAnswers. The summary is not persisted while it remains cheap to derive.
+
+WhatsApp uses `wa.me` links with URL-encoded summary text. The destination is `Company.whatsappPhone`, representing the company or seller number for the first MVP cycle. Lead visitor phone detection remains a future semantic-field decision.
 
 ### `common`
 

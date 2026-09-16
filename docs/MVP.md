@@ -60,6 +60,8 @@ Build the smallest useful product that lets a company publish a conversational q
 - Lead detail view.
 - Basic filtering by flow and creation date.
 
+The first Lead Inbox should stay simple: `/login`, `/leads`, and `/leads/:id`. Lead detail includes ordered answers, deterministic summary, and a `wa.me` link when the Company has `whatsapp_phone` configured. The current WhatsApp destination is the Company's configured number, not an inferred visitor phone.
+
 ## Non-Goals For MVP
 
 - Conditional questions beyond simple future-proof modeling.

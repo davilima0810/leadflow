@@ -70,6 +70,7 @@ POSTGRES_PASSWORD=leadflow_dev_password
 DATABASE_URL=postgresql://leadflow:leadflow_dev_password@localhost:5432/leadflow
 JWT_SECRET=change-me-in-development
 JWT_EXPIRES_IN=1h
+NEXT_PUBLIC_API_URL=http://localhost:3001/api
 ```
 
 Do not commit real secrets.
@@ -110,7 +111,11 @@ Local URLs:
 - API auth me: GET http://localhost:3001/api/auth/me
 - API flows: http://localhost:3001/api/flows
 - API public flow: GET http://localhost:3001/api/public-flows/:companySlug/:flowSlug
-- Future public frontend URL: http://localhost:3000/c/:companySlug/:flowSlug
+- API public submission: POST http://localhost:3001/api/public-flows/:companySlug/:flowSlug/submissions
+- API leads: http://localhost:3001/api/leads
+- Login: http://localhost:3000/login
+- Lead Inbox: http://localhost:3000/leads
+- Public frontend URL: http://localhost:3000/c/:companySlug/:flowSlug
 - PostgreSQL: localhost:5432
 
 ## Scripts
@@ -126,6 +131,10 @@ pnpm test      # runs workspace tests
 
 ## Current Scope
 
-This repository currently contains the technical foundation, the Prisma schema for Company/User/Flow/Question/QuestionOption, API authentication through Argon2 password hashing and JWT Bearer access tokens, private tenant-scoped Flow/Question management endpoints, and read-only public flow lookup for published flows.
+This repository currently contains the technical foundation, the Prisma schema for Company/User/Flow/Question/QuestionOption/Lead/LeadAnswer, API authentication through Argon2 password hashing and JWT Bearer access tokens, private tenant-scoped Flow/Question management endpoints, public flow lookup/submission, and a minimal private Lead Inbox.
 
-Refresh tokens, cookies, frontend auth screens, public flow answering, leads, rate limiting, and WhatsApp features are intentionally not implemented yet.
+The private frontend currently uses a small browser-side token helper with localStorage for the MVP pilot. Review this before public production hardening.
+
+Lead detail generates a deterministic summary from the stored answers and exposes a `wa.me` link when `Company.whatsappPhone` is configured. The current WhatsApp destination is the Company's configured number; visitor phone detection is intentionally deferred.
+
+Refresh tokens, cookies, password reset, public signup UI, rate limiting, official WhatsApp Business API integration, and advanced CRM features are intentionally not implemented yet.

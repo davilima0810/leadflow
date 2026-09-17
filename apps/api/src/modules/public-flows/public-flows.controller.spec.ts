@@ -387,4 +387,85 @@ describe("PublicFlowsController", () => {
       })
       .expect(400);
   });
+
+  it("rejects oversized public submission payloads", async () => {
+    const company = await createCompany("oversized-submission");
+    const flow = await createFlowWithQuestions(
+      company.id,
+      `oversized-submission-${testRunId}`,
+      FlowStatus.PUBLISHED
+    );
+
+    await request(app.getHttpServer())
+      .post(`/api/public-flows/${company.slug}/${flow.slug}/submissions`)
+      .send({
+        answers: Array.from({ length: 101 }, () => ({
+          questionId: "00000000-0000-4000-8000-000000000000",
+          value: "x"
+        }))
+      })
+      .expect(400);
+  });
+
+  it("rate limits public submissions per flow and requester", async () => {
+    const previousMax = process.env.PUBLIC_SUBMISSION_RATE_LIMIT_MAX;
+    const previousWindow = process.env.PUBLIC_SUBMISSION_RATE_LIMIT_WINDOW_MS;
+    process.env.PUBLIC_SUBMISSION_RATE_LIMIT_MAX = "1";
+    process.env.PUBLIC_SUBMISSION_RATE_LIMIT_WINDOW_MS = "60000";
+
+    const company = await createCompany("rate-limit");
+    const flow = await createFlowWithQuestions(
+      company.id,
+      `rate-limit-${testRunId}`,
+      FlowStatus.PUBLISHED
+    );
+    const flowWithQuestions = await prisma.flow.findUniqueOrThrow({
+      where: {
+        id: flow.id
+      },
+      include: {
+        questions: {
+          orderBy: {
+            position: "asc"
+          }
+        }
+      }
+    });
+
+    await request(app.getHttpServer())
+      .post(`/api/public-flows/${company.slug}/${flow.slug}/submissions`)
+      .send({
+        answers: [
+          {
+            questionId: flowWithQuestions.questions[0].id,
+            value: "carro"
+          }
+        ]
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/api/public-flows/${company.slug}/${flow.slug}/submissions`)
+      .send({
+        answers: [
+          {
+            questionId: flowWithQuestions.questions[0].id,
+            value: "carro"
+          }
+        ]
+      })
+      .expect(429);
+
+    if (previousMax === undefined) {
+      delete process.env.PUBLIC_SUBMISSION_RATE_LIMIT_MAX;
+    } else {
+      process.env.PUBLIC_SUBMISSION_RATE_LIMIT_MAX = previousMax;
+    }
+
+    if (previousWindow === undefined) {
+      delete process.env.PUBLIC_SUBMISSION_RATE_LIMIT_WINDOW_MS;
+    } else {
+      process.env.PUBLIC_SUBMISSION_RATE_LIMIT_WINDOW_MS = previousWindow;
+    }
+  });
 });

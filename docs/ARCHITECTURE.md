@@ -203,6 +203,8 @@ The public Flow API is a separate boundary from private Flow management. It does
 
 Public submissions use `POST /api/public-flows/:companySlug/:flowSlug/submissions`. The backend resolves Company and Flow from the URL, validates answers against the current published Flow definition, and creates Lead plus LeadAnswer records atomically.
 
+For MVP readiness, public submissions also have a simple in-memory rate limit configured by `PUBLIC_SUBMISSION_RATE_LIMIT_WINDOW_MS` and `PUBLIC_SUBMISSION_RATE_LIMIT_MAX`. This avoids trivial abuse in the first pilot but is not a distributed rate limiter.
+
 ### `leads`
 
 - Lead inbox.
@@ -272,6 +274,8 @@ Private Flow and Question operations must use `CurrentUser.companyId`. Flow slug
 - Protect private routes with authentication.
 - Enforce tenant isolation in services/repositories.
 - Validate public submissions by flow and question definitions.
+- Keep public submission payloads bounded.
+- Configure API CORS with `WEB_URL` for deployed environments.
 - Avoid exposing internal database models directly.
 - Never return `passwordHash` in API responses.
 - Register creates Company and the first ADMIN User atomically.

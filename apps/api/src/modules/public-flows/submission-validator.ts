@@ -14,6 +14,8 @@ type NormalizedAnswer = {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^\d{2}:\d{2}$/;
+const MAX_STRING_ANSWER_LENGTH = 2000;
+const MAX_MULTIPLE_CHOICE_VALUES = 50;
 
 @Injectable()
 export class SubmissionValidator {
@@ -123,6 +125,12 @@ export class SubmissionValidator {
       );
     }
 
+    if (value.length > MAX_STRING_ANSWER_LENGTH) {
+      throw new BadRequestException(
+        `A resposta da pergunta "${label}" está muito longa.`
+      );
+    }
+
     return value;
   }
 
@@ -204,6 +212,12 @@ export class SubmissionValidator {
     if (!Array.isArray(value)) {
       throw new BadRequestException(
         `A resposta da pergunta "${question.label}" precisa ser uma lista de opções.`
+      );
+    }
+
+    if (value.length > MAX_MULTIPLE_CHOICE_VALUES) {
+      throw new BadRequestException(
+        `A resposta da pergunta "${question.label}" possui opções demais.`
       );
     }
 

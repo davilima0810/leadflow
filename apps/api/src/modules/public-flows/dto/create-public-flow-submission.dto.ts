@@ -1,5 +1,6 @@
 import { Type } from "class-transformer";
 import {
+  ArrayMaxSize,
   IsArray,
   IsNotEmpty,
   IsUUID,
@@ -18,6 +19,7 @@ export class PublicFlowSubmissionAnswerDto {
 
 export class CreatePublicFlowSubmissionDto {
   @IsArray()
+  @ArrayMaxSize(100)
   @ValidateNested({ each: true })
   @Type(() => PublicFlowSubmissionAnswerDto)
   answers!: PublicFlowSubmissionAnswerDto[];

@@ -70,6 +70,11 @@ POSTGRES_PASSWORD=leadflow_dev_password
 DATABASE_URL=postgresql://leadflow:leadflow_dev_password@localhost:5432/leadflow
 JWT_SECRET=change-me-in-development
 JWT_EXPIRES_IN=1h
+PORT=3001
+API_HOST=127.0.0.1
+WEB_URL=http://localhost:3000
+PUBLIC_SUBMISSION_RATE_LIMIT_WINDOW_MS=60000
+PUBLIC_SUBMISSION_RATE_LIMIT_MAX=20
 NEXT_PUBLIC_API_URL=http://localhost:3001/api
 ```
 
@@ -85,6 +90,12 @@ Check the container health:
 
 ```sh
 docker compose ps
+```
+
+Run database migrations:
+
+```sh
+pnpm --filter @leadflow/api exec prisma migrate dev --schema prisma/schema.prisma
 ```
 
 ## Run The Project
@@ -125,13 +136,32 @@ pnpm dev       # starts web and api together
 pnpm dev:web   # starts apps/web on port 3000
 pnpm dev:api   # starts apps/api on port 3001
 pnpm build     # builds all workspace apps
+pnpm start     # starts built web and api apps
+pnpm start:web # starts the built Next.js app
+pnpm start:api # starts the built NestJS API
 pnpm lint      # lints all workspace apps
 pnpm test      # runs workspace tests
 ```
 
+For a production-like local check:
+
+```sh
+pnpm build
+pnpm start:api
+pnpm start:web
+```
+
+Production requirements:
+
+- set a strong `JWT_SECRET`;
+- set `WEB_URL` to the deployed frontend origin for CORS;
+- set `NEXT_PUBLIC_API_URL` to the deployed API `/api` URL;
+- run Prisma migrations before serving traffic;
+- keep `.env` files out of version control.
+
 ## Current Scope
 
-This repository currently contains the technical foundation, the Prisma schema for Company/User/Flow/Question/QuestionOption/Lead/LeadAnswer, API authentication through Argon2 password hashing and JWT Bearer access tokens, private tenant-scoped Flow/Question management endpoints, public flow lookup/submission, and a minimal private Lead Inbox.
+This repository currently contains the technical foundation, the Prisma schema for Company/User/Flow/Question/QuestionOption/Lead/LeadAnswer, API authentication through Argon2 password hashing and JWT Bearer access tokens, private tenant-scoped Flow/Question management endpoints, public flow lookup/submission, a minimal Flow Builder, and a private Lead Inbox.
 
 The private frontend currently uses a small browser-side token helper with localStorage for the MVP pilot. Review this before public production hardening.
 
@@ -139,4 +169,6 @@ The private frontend currently uses a small browser-side token helper with local
 
 Lead detail derives contact fields from LeadAnswers and their Question semantic types. It generates a deterministic summary and exposes a `wa.me` link when the Lead has a `CONTACT_PHONE` answer. Phone normalization keeps only digits and does not add a country code automatically.
 
-Refresh tokens, cookies, password reset, public signup UI, rate limiting, official WhatsApp Business API integration, and advanced CRM features are intentionally not implemented yet.
+The public submission endpoint has a simple in-memory rate limit for the first pilot. It is not a distributed limiter and should be revisited before scaling horizontally.
+
+Refresh tokens, cookies, password reset, public signup UI, official WhatsApp Business API integration, and advanced CRM features are intentionally not implemented yet.

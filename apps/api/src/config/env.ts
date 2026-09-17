@@ -32,3 +32,17 @@ for (const envPath of envPaths) {
     process.env[key] ??= value;
   }
 }
+
+const requiredEnvVars = ["DATABASE_URL", "JWT_SECRET"];
+const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
+
+if (missingEnvVars.length > 0) {
+  throw new Error(`Missing required environment variables: ${missingEnvVars.join(", ")}`);
+}
+
+if (
+  process.env.NODE_ENV === "production" &&
+  process.env.JWT_SECRET === "change-me-in-development"
+) {
+  throw new Error("JWT_SECRET must be changed for production.");
+}

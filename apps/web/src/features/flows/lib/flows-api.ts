@@ -1,5 +1,10 @@
 import { privateApi } from "../../auth/lib/private-api";
-import type { Flow, FlowFormValues } from "../types/flow";
+import type {
+  Flow,
+  FlowFormValues,
+  Question,
+  QuestionFormValues
+} from "../types/flow";
 
 type FlowPayload = {
   name: string;
@@ -9,6 +14,10 @@ type FlowPayload = {
 
 export function getFlows(): Promise<Flow[]> {
   return privateApi<Flow[]>("/flows");
+}
+
+export function getFlow(id: string): Promise<Flow> {
+  return privateApi<Flow>(`/flows/${id}`);
 }
 
 export function createFlow(values: FlowFormValues): Promise<Flow> {
@@ -37,10 +46,72 @@ export function unpublishFlow(id: string): Promise<Flow> {
   });
 }
 
+export function createQuestion(
+  flowId: string,
+  values: QuestionFormValues,
+  position: number
+): Promise<Question> {
+  return privateApi<Question>(`/flows/${flowId}/questions`, {
+    method: "POST",
+    body: toQuestionPayload(values, position)
+  });
+}
+
+export function updateQuestion(
+  flowId: string,
+  questionId: string,
+  values: QuestionFormValues,
+  position: number
+): Promise<Question> {
+  return privateApi<Question>(`/flows/${flowId}/questions/${questionId}`, {
+    method: "PATCH",
+    body: toQuestionPayload(values, position)
+  });
+}
+
+export function deleteQuestion(flowId: string, questionId: string) {
+  return privateApi<{ deleted: boolean }>(
+    `/flows/${flowId}/questions/${questionId}`,
+    {
+      method: "DELETE"
+    }
+  );
+}
+
+export function reorderQuestions(flowId: string, questionIds: string[]) {
+  return privateApi<Question[]>(`/flows/${flowId}/questions/reorder`, {
+    method: "PATCH",
+    body: {
+      questionIds
+    }
+  });
+}
+
 function toPayload(values: FlowFormValues): FlowPayload {
   return {
     name: values.name,
     slug: values.slug,
     description: values.description.trim() ? values.description : null
+  };
+}
+
+function toQuestionPayload(values: QuestionFormValues, position: number) {
+  const choiceType =
+    values.type === "SINGLE_CHOICE" || values.type === "MULTIPLE_CHOICE";
+
+  return {
+    label: values.label,
+    description: values.description.trim() ? values.description : null,
+    type: values.type,
+    semanticType: values.semanticType,
+    required: values.required,
+    position,
+    options: choiceType
+      ? values.options.map((option, index) => ({
+          label: option.label,
+          value: option.value,
+          position: index + 1
+        }))
+      : []
   };
 }

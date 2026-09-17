@@ -97,7 +97,7 @@ Future application areas:
 
 Pages should stay thin. Domain UI should live under `src/features/*`, shared UI under `src/components/*`, and API/client utilities under `src/lib/*`.
 
-The first private admin panel uses a reusable frontend `AdminLayout` around `/flows`, `/leads`, and lead detail routes. The authenticated navigation is intentionally small: Flows, Leads, current company/user context, and logout. The Flow Builder route `/flows/:id` currently exists as a placeholder for the next implementation step.
+The first private admin panel uses a reusable frontend `AdminLayout` around `/flows`, `/flows/:id`, `/leads`, and lead detail routes. The authenticated navigation is intentionally small: Flows, Leads, current company/user context, and logout. `/flows/:id` is the MVP Flow Builder for configuring questions, options, ordering, and publish state.
 
 ### `apps/api`
 

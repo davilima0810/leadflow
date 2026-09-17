@@ -13,20 +13,29 @@ export function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    setIsSubmitting(true);
+  event.preventDefault();
 
-    try {
-      const session = await login(email, password);
-      setAuthToken(session.accessToken);
-      router.push("/leads");
-    } catch {
-      setError("Email ou senha inválidos.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  console.log("SUBMIT", { email, password });
+
+  setError("");
+  setIsSubmitting(true);
+
+  try {
+    console.log("ANTES DO LOGIN");
+
+    const session = await login(email, password);
+
+    console.log("DEPOIS DO LOGIN", session);
+
+    setAuthToken(session.accessToken);
+    router.push("/flows");
+  } catch (error) {
+    console.error("ERRO LOGIN:", error);
+    setError("Email ou senha inválidos.");
+  } finally {
+    setIsSubmitting(false);
   }
+}
 
   return (
     <form className="private-panel auth-form" onSubmit={handleSubmit}>

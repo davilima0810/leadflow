@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getLeads, UnauthorizedError } from "../lib/leads-api";
+import { UnauthorizedError } from "../../auth/lib/private-api";
+import { getLeads } from "../lib/leads-api";
 import type { LeadListItem } from "../types/lead";
 
 type LoadState = "loading" | "success" | "empty" | "error";
@@ -48,7 +49,6 @@ export function LeadsInbox() {
   }, [router]);
 
   return (
-    <main className="private-shell">
       <section className="private-page">
         <header className="private-header">
           <div>
@@ -92,7 +92,6 @@ export function LeadsInbox() {
           </div>
         ) : null}
       </section>
-    </main>
   );
 }
 

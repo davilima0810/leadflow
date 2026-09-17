@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getLead, UnauthorizedError } from "../lib/leads-api";
+import { UnauthorizedError } from "../../auth/lib/private-api";
+import { getLead } from "../lib/leads-api";
 import type { LeadDetail } from "../types/lead";
 
 type LoadState = "loading" | "success" | "error";
@@ -52,7 +53,6 @@ export function LeadDetailView({ leadId }: LeadDetailViewProps) {
   }, [leadId, router]);
 
   return (
-    <main className="private-shell">
       <section className="private-page">
         <header className="private-header">
           <div>
@@ -112,7 +112,6 @@ export function LeadDetailView({ leadId }: LeadDetailViewProps) {
           </div>
         ) : null}
       </section>
-    </main>
   );
 }
 

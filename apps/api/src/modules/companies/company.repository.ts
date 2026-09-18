@@ -23,4 +23,11 @@ export class CompanyRepository {
       where: { slug }
     });
   }
+
+  updateById(id: string, data: Prisma.CompanyUpdateInput): Promise<Company> {
+    return this.prisma.company.update({
+      where: { id },
+      data
+    });
+  }
 }

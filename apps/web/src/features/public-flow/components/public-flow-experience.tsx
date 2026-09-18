@@ -1,6 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
+import {
+  DEFAULT_BACKGROUND_COLOR,
+  DEFAULT_PRIMARY_COLOR,
+  getContrastTextColor,
+  isHexColor
+} from "../../flows/lib/flow-appearance";
+import { BrandImage } from "../../flows/components/brand-image";
 import {
   getPublicFlow,
   PublicFlowNotFoundError
@@ -68,6 +76,27 @@ export function PublicFlowExperience({
   }, [companySlug, flowSlug]);
 
   const questions = useMemo(() => flow?.flow.questions ?? [], [flow]);
+  const theme = useMemo(() => {
+    const primaryColor =
+      flow?.flow.appearance.primaryColor &&
+      isHexColor(flow.flow.appearance.primaryColor)
+        ? flow.flow.appearance.primaryColor
+        : DEFAULT_PRIMARY_COLOR;
+    const backgroundColor =
+      flow?.flow.appearance.backgroundColor &&
+      isHexColor(flow.flow.appearance.backgroundColor)
+        ? flow.flow.appearance.backgroundColor
+        : DEFAULT_BACKGROUND_COLOR;
+
+    return {
+      "--flow-primary": primaryColor,
+      "--flow-background": backgroundColor,
+      "--flow-background-image": flow?.flow.appearance.backgroundImageUrl
+        ? `linear-gradient(rgba(17, 24, 39, 0.44), rgba(17, 24, 39, 0.44)), url("${flow.flow.appearance.backgroundImageUrl}")`
+        : "none",
+      "--flow-primary-contrast": getContrastTextColor(primaryColor)
+    } as CSSProperties;
+  }, [flow]);
   const currentQuestion = questions[currentIndex];
   const progress =
     questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
@@ -224,10 +253,18 @@ export function PublicFlowExperience({
 
   if (screen === "intro") {
     return (
-      <main className="public-flow-shell">
+      <main className="public-flow-shell" style={theme}>
         <section className="public-flow-panel intro-panel">
+          <BrandImage
+            className="public-flow-cover"
+            display={flow.flow.appearance.brandImageDisplay}
+            src={flow.flow.appearance.coverImageUrl}
+          />
           <p className="public-flow-eyebrow">{flow.company.name}</p>
           <h1>{flow.flow.name}</h1>
+          {flow.flow.appearance.welcomeMessage ? (
+            <p>{flow.flow.appearance.welcomeMessage}</p>
+          ) : null}
           {flow.flow.description ? <p>{flow.flow.description}</p> : null}
           <button
             className="public-flow-primary-button"
@@ -236,6 +273,17 @@ export function PublicFlowExperience({
           >
             Começar
           </button>
+          {flow.flow.appearance.externalLinkUrl &&
+          flow.flow.appearance.externalLinkLabel ? (
+            <a
+              className="public-flow-external-link"
+              href={flow.flow.appearance.externalLinkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {flow.flow.appearance.externalLinkLabel} ↗
+            </a>
+          ) : null}
         </section>
       </main>
     );
@@ -243,13 +291,42 @@ export function PublicFlowExperience({
 
   if (screen === "done") {
     return (
-      <main className="public-flow-shell">
+      <main className="public-flow-shell" style={theme}>
         <section className="public-flow-panel">
           <p className="public-flow-eyebrow">{flow.company.name}</p>
           <h1>Tudo pronto!</h1>
           <p>Recebemos suas respostas. A empresa já pode acessar este lead.</p>
+          {submission?.whatsapp.available && submission.whatsapp.url ? (
+            <>
+              <p>
+                Para continuar o atendimento, envie essas informações para nossa
+                equipe pelo WhatsApp.
+              </p>
+              <a
+                className="public-flow-primary-button"
+                href={submission.whatsapp.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Continuar no WhatsApp
+              </a>
+            </>
+          ) : (
+            <p>Recebemos suas respostas e entraremos em contato.</p>
+          )}
           {submission ? (
             <p className="public-flow-muted">Protocolo: {submission.id}</p>
+          ) : null}
+          {flow.flow.appearance.externalLinkUrl &&
+          flow.flow.appearance.externalLinkLabel ? (
+            <a
+              className="public-flow-secondary-button"
+              href={flow.flow.appearance.externalLinkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {flow.flow.appearance.externalLinkLabel}
+            </a>
           ) : null}
           <button
             className="public-flow-secondary-button"
@@ -272,7 +349,7 @@ export function PublicFlowExperience({
     currentQuestion.type !== "SINGLE_CHOICE" && currentQuestion.type !== "BOOLEAN";
 
   return (
-    <main className="public-flow-shell">
+    <main className="public-flow-shell" style={theme}>
       <section className="public-flow-panel question-panel">
         <div className="public-flow-topline">
           <button

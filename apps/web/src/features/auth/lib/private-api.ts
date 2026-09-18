@@ -17,7 +17,7 @@ export class ApiRequestError extends Error {
 
 type PrivateApiOptions = {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
-  body?: unknown;
+  body?: unknown | FormData;
 };
 
 export async function privateApi<T>(
@@ -35,13 +35,19 @@ export async function privateApi<T>(
     throw new UnauthorizedError();
   }
 
+  const isFormData = options.body instanceof FormData;
+  const body = isFormData
+    ? options.body
+    : options.body
+      ? JSON.stringify(options.body)
+      : undefined;
   const response = await fetch(`${apiUrl}${path}`, {
     method: options.method ?? "GET",
     headers: {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json"
+      ...(isFormData ? {} : { "Content-Type": "application/json" })
     },
-    body: options.body ? JSON.stringify(options.body) : undefined
+    body: body as BodyInit | undefined
   });
 
   if (response.status === 401) {

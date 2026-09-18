@@ -4,6 +4,7 @@ import type { QuestionType } from "@prisma/client";
 import type { LeadDetailRecord } from "./lead.repository";
 
 type DisplayValue = string | number | boolean | string[] | null;
+type SummaryAnswer = { question: string; displayValue: DisplayValue };
 
 @Injectable()
 export class LeadPresenterService {
@@ -50,15 +51,12 @@ export class LeadPresenterService {
       answers,
       summary,
       whatsappUrl: normalizedContactPhone
-        ? this.buildWhatsappUrl(normalizedContactPhone, summary, contact.name)
+        ? this.buildLeadWhatsappUrl(normalizedContactPhone, summary, contact.name)
         : null
     };
   }
 
-  private buildSummary(
-    flowName: string,
-    answers: Array<{ question: string; displayValue: DisplayValue }>
-  ) {
+  buildSummary(flowName: string, answers: SummaryAnswer[]) {
     return [
       flowName,
       "",
@@ -71,7 +69,38 @@ export class LeadPresenterService {
     ].join("\n");
   }
 
-  private buildWhatsappUrl(
+  buildPublicSubmissionSummary(flowName: string, answers: SummaryAnswer[]) {
+    return [
+      `Olá! Acabei de preencher o formulário "${flowName}".`,
+      "",
+      ...answers.map(
+        (answer) =>
+          `${answer.question}: ${this.stringifyDisplayValue(answer.displayValue)}`
+      ),
+      "",
+      "Enviado através do LeadFlow."
+    ].join("\n");
+  }
+
+  buildCompanyWhatsappUrl(phone: string | null, message: string) {
+    const normalizedPhone = this.normalizePhone(phone);
+
+    if (!normalizedPhone) {
+      return null;
+    }
+
+    return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
+  }
+
+  getQuestionDisplayValue(
+    value: DisplayValue,
+    type: QuestionType,
+    options: Array<{ label: string; value: string }>
+  ): DisplayValue {
+    return this.getDisplayValue(value, type, options);
+  }
+
+  private buildLeadWhatsappUrl(
     phone: string,
     summary: string,
     contactName: string | null

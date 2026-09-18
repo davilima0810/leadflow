@@ -72,6 +72,14 @@ Suggested statuses:
 - `slug`
 - `description`
 - `status`
+- `cover_image_url`
+- `brand_image_display`
+- `primary_color`
+- `background_color`
+- `background_image_url`
+- `welcome_message`
+- `external_link_url`
+- `external_link_label`
 - `created_at`
 - `updated_at`
 
@@ -81,6 +89,19 @@ Suggested statuses:
 - `PUBLISHED`
 
 `flows.slug` is unique per Company through `company_id + slug`, not globally unique.
+
+Flow appearance is intentionally stored directly on `flows` for the MVP:
+
+- `cover_image_url`: optional public image URL for the main brand image;
+- `brand_image_display`: `LOGO` or `PROFILE`, defaulting to `LOGO`;
+- `primary_color`: optional HEX color in `#RRGGBB` format;
+- `background_color`: optional HEX color in `#RRGGBB` format;
+- `background_image_url`: optional uploaded background image URL;
+- `welcome_message`: optional plain-text intro message;
+- `external_link_url`: optional public secondary link URL;
+- `external_link_label`: optional public secondary link label.
+
+If appearance fields are empty, the public flow UI uses LeadFlow defaults. Binary images are not stored in PostgreSQL; only storage URLs are persisted.
 
 ### questions
 

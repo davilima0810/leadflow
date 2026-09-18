@@ -181,6 +181,7 @@ The initial frontend login stores the JWT in a small browser-side auth helper so
 - Publish/unpublish.
 - Slug management.
 - Tenant-scoped flow reads and writes.
+- Basic Flow appearance: uploaded brand image URL, brand image display mode (`LOGO` or `PROFILE`), primary color, background color/image, welcome message, and one optional external link.
 
 ### `questions`
 
@@ -201,6 +202,8 @@ The initial frontend login stores the JWT in a small browser-side auth helper so
 
 The public Flow API is a separate boundary from private Flow management. It does not require JWT and exposes only published flows through `GET /api/public-flows/:companySlug/:flowSlug`. Draft flows return `404` publicly.
 
+Public Flow responses expose only public-safe appearance data under the Flow payload: `coverImageUrl`, `brandImageDisplay`, `primaryColor`, `backgroundColor`, `backgroundImageUrl`, `welcomeMessage`, `externalLinkUrl`, and `externalLinkLabel`. Runtime colors/images are applied in the web app through CSS variables, with a computed contrast color for primary buttons. `brandImageDisplay` changes presentation only; it does not create a second image or upload path.
+
 Public submissions use `POST /api/public-flows/:companySlug/:flowSlug/submissions`. The backend resolves Company and Flow from the URL, validates answers against the current published Flow definition, and creates Lead plus LeadAnswer records atomically.
 
 For MVP readiness, public submissions also have a simple in-memory rate limit configured by `PUBLIC_SUBMISSION_RATE_LIMIT_WINDOW_MS` and `PUBLIC_SUBMISSION_RATE_LIMIT_MAX`. This avoids trivial abuse in the first pilot but is not a distributed rate limiter.
@@ -218,7 +221,7 @@ Lead summaries are generated deterministically from Flow name, Questions, and Le
 
 Lead contact fields are derived from LeadAnswers whose Questions use contact semantic types. They are not duplicated into the Lead table.
 
-WhatsApp uses `wa.me` links with URL-encoded summary text. The destination is the normalized `CONTACT_PHONE` answer from the Lead when available. Phone normalization for the MVP keeps only digits and does not add a country code automatically, preserving international flexibility. `Company.whatsappPhone` remains available for future configuration, notification, fallback, or integration needs, but it is not used as the "Conversar com lead" destination.
+Private Lead detail uses `wa.me` links to contact the Lead when there is a `CONTACT_PHONE` answer. Public submission success uses `Company.whatsappPhone` as the company destination and includes a deterministic summary of all submitted answers. Phone normalization for the MVP keeps only digits and does not add a country code automatically, preserving international flexibility.
 
 ### `common`
 
@@ -235,6 +238,12 @@ WhatsApp uses `wa.me` links with URL-encoded summary text. The destination is th
 - Repository providers.
 
 Prisma must stay encapsulated in the persistence layer. Controllers must not access Prisma directly. Services should depend on explicit repositories, such as `CompanyRepository` and `UserRepository`, instead of knowing Prisma APIs.
+
+### `storage`
+
+Flow image uploads go through `StorageService`. The current implementation is `LocalStorageService`, which writes files to the frontend public directory configured by `LOCAL_STORAGE_PUBLIC_DIR` and returns URLs under `LOCAL_STORAGE_BASE_URL` plus `/uploads/...`.
+
+`LocalStorageService` is temporary and appropriate only for local development or a pilot deployment where API and web share the same filesystem. Distributed, serverless, or horizontally scaled production should replace it with `S3StorageService` or equivalent S3-compatible storage. Do not store binary images or base64 image data in PostgreSQL.
 
 ## Multi-Tenancy Rule
 

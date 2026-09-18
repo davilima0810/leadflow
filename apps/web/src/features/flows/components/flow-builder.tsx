@@ -10,12 +10,23 @@ import {
   deleteQuestion,
   getFlow,
   publishFlow,
+  removeFlowBackground,
+  removeFlowLogo,
   reorderQuestions,
   unpublishFlow,
-  updateQuestion
+  updateFlowAppearance,
+  updateQuestion,
+  uploadFlowBackground,
+  uploadFlowLogo
 } from "../lib/flows-api";
 import { buildPublicFlowUrl } from "../lib/public-flow-url";
-import type { Flow, Question, QuestionFormValues } from "../types/flow";
+import type {
+  Flow,
+  FlowAppearanceFormValues,
+  Question,
+  QuestionFormValues
+} from "../types/flow";
+import { FlowAppearanceForm } from "./flow-appearance-form";
 import { FlowPublishActions } from "./flow-publish-actions";
 import { QuestionForm } from "./question-form";
 import { QuestionList } from "./question-list";
@@ -38,8 +49,12 @@ export function FlowBuilder({ flowId }: FlowBuilderProps) {
   const [activeQuestionForm, setActiveQuestionForm] =
     useState<ActiveQuestionForm>(null);
   const [formError, setFormError] = useState("");
+  const [appearanceError, setAppearanceError] = useState("");
   const [pageMessage, setPageMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingAppearance, setIsSavingAppearance] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingBackground, setIsUploadingBackground] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [pendingQuestionId, setPendingQuestionId] = useState<string | null>(null);
@@ -124,6 +139,99 @@ export function FlowBuilder({ flowId }: FlowBuilderProps) {
       setFormError(getFriendlyQuestionError(error));
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleAppearanceSubmit(values: FlowAppearanceFormValues) {
+    if (!flow) {
+      return;
+    }
+
+    setIsSavingAppearance(true);
+    setAppearanceError("");
+    setPageMessage("");
+
+    try {
+      setFlow(await updateFlowAppearance(flow.id, values));
+      setPageMessage("Aparência salva.");
+    } catch (error) {
+      setAppearanceError(getFriendlyAppearanceError(error));
+    } finally {
+      setIsSavingAppearance(false);
+    }
+  }
+
+  async function handleLogoUpload(file: File) {
+    if (!flow) {
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    setAppearanceError("");
+    setPageMessage("");
+
+    try {
+      setFlow(await uploadFlowLogo(flow.id, file));
+      setPageMessage("Logo atualizado.");
+    } catch (error) {
+      setAppearanceError(getFriendlyUploadError(error));
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  }
+
+  async function handleBackgroundUpload(file: File) {
+    if (!flow) {
+      return;
+    }
+
+    setIsUploadingBackground(true);
+    setAppearanceError("");
+    setPageMessage("");
+
+    try {
+      setFlow(await uploadFlowBackground(flow.id, file));
+      setPageMessage("Imagem de fundo atualizada.");
+    } catch (error) {
+      setAppearanceError(getFriendlyUploadError(error));
+    } finally {
+      setIsUploadingBackground(false);
+    }
+  }
+
+  async function handleLogoRemove() {
+    if (!flow) {
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    setAppearanceError("");
+
+    try {
+      setFlow(await removeFlowLogo(flow.id));
+      setPageMessage("Logo removido.");
+    } catch (error) {
+      setAppearanceError(getFriendlyUploadError(error));
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  }
+
+  async function handleBackgroundRemove() {
+    if (!flow) {
+      return;
+    }
+
+    setIsUploadingBackground(true);
+    setAppearanceError("");
+
+    try {
+      setFlow(await removeFlowBackground(flow.id));
+      setPageMessage("Imagem de fundo removida.");
+    } catch (error) {
+      setAppearanceError(getFriendlyUploadError(error));
+    } finally {
+      setIsUploadingBackground(false);
     }
   }
 
@@ -315,6 +423,19 @@ export function FlowBuilder({ flowId }: FlowBuilderProps) {
 
       {pageMessage ? <p className="private-feedback">{pageMessage}</p> : null}
 
+      <FlowAppearanceForm
+        error={appearanceError}
+        flow={flow}
+        isUploadingBackground={isUploadingBackground}
+        isUploadingLogo={isUploadingLogo}
+        isSubmitting={isSavingAppearance}
+        onBackgroundRemove={handleBackgroundRemove}
+        onBackgroundUpload={handleBackgroundUpload}
+        onLogoRemove={handleLogoRemove}
+        onLogoUpload={handleLogoUpload}
+        onSubmit={handleAppearanceSubmit}
+      />
+
       <section className="builder-section">
         <div className="section-heading">
           <div>
@@ -375,6 +496,30 @@ export function FlowBuilder({ flowId }: FlowBuilderProps) {
       ) : null}
     </section>
   );
+}
+
+function getFriendlyAppearanceError(error: unknown) {
+  if (error instanceof ApiRequestError) {
+    if (error.status === 400) {
+      return "Confira as cores em HEX, a URL da imagem e o tamanho da mensagem.";
+    }
+
+    return error.message;
+  }
+
+  return "Não foi possível salvar a aparência.";
+}
+
+function getFriendlyUploadError(error: unknown) {
+  if (error instanceof ApiRequestError) {
+    if (error.status === 400 || error.status === 413) {
+      return "Envie uma imagem JPEG, PNG ou WebP com até 2 MB.";
+    }
+
+    return error.message;
+  }
+
+  return "Não foi possível atualizar a imagem.";
 }
 
 function getFriendlyQuestionError(error: unknown) {

@@ -11,6 +11,16 @@ export function toPublicFlowResponse(flow: PublicFlowRecord) {
       name: flow.name,
       slug: flow.slug,
       description: flow.description,
+      appearance: {
+        coverImageUrl: flow.coverImageUrl,
+        brandImageDisplay: flow.brandImageDisplay,
+        primaryColor: flow.primaryColor,
+        backgroundColor: flow.backgroundColor,
+        backgroundImageUrl: flow.backgroundImageUrl,
+        welcomeMessage: flow.welcomeMessage,
+        externalLinkUrl: flow.externalLinkUrl,
+        externalLinkLabel: flow.externalLinkLabel
+      },
       questions: flow.questions.map((question) => ({
         id: question.id,
         label: question.label,

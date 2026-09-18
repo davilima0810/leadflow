@@ -15,6 +15,7 @@ export type QuestionSemanticType =
   | "CONTACT_NAME"
   | "CONTACT_PHONE"
   | "CONTACT_EMAIL";
+export type BrandImageDisplay = "LOGO" | "PROFILE";
 
 export type PublicFlowOption = {
   id: string;
@@ -44,6 +45,16 @@ export type PublicFlow = {
     name: string;
     slug: string;
     description: string | null;
+    appearance: {
+      coverImageUrl: string | null;
+      brandImageDisplay: BrandImageDisplay;
+      primaryColor: string | null;
+      backgroundColor: string | null;
+      backgroundImageUrl: string | null;
+      welcomeMessage: string | null;
+      externalLinkUrl: string | null;
+      externalLinkLabel: string | null;
+    };
     questions: PublicFlowQuestion[];
   };
 };
@@ -59,5 +70,10 @@ export type PublicFlowSubmissionPayload = {
 
 export type PublicFlowSubmissionResponse = {
   id: string;
+  leadId: string;
   status: "created";
+  whatsapp: {
+    available: boolean;
+    url: string | null;
+  };
 };

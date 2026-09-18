@@ -102,7 +102,8 @@ describe("PublicFlowsController", () => {
   async function createFlowWithQuestions(
     companyId: string,
     slug: string,
-    status: FlowStatus
+    status: FlowStatus,
+    appearance: Record<string, string | null> = {}
   ) {
     return prisma.flow.create({
       data: {
@@ -111,6 +112,7 @@ describe("PublicFlowsController", () => {
         slug,
         description: "Qualificação pública",
         status,
+        ...appearance,
         questions: {
           create: [
             {
@@ -167,7 +169,14 @@ describe("PublicFlowsController", () => {
         id: flow.id,
         name: "Aluguel de veículos",
         slug: flow.slug,
-        description: "Qualificação pública"
+        description: "Qualificação pública",
+        appearance: {
+          coverImageUrl: null,
+          brandImageDisplay: "LOGO",
+          primaryColor: null,
+          backgroundColor: null,
+          welcomeMessage: null
+        }
       }
     });
     expect(response.body.flow.questions.map((question: { position: number }) => question.position)).toEqual([
@@ -179,6 +188,39 @@ describe("PublicFlowsController", () => {
       1,
       2
     ]);
+  });
+
+  it("returns public appearance fields for a published flow", async () => {
+    const company = await createCompany("appearance");
+    const localCoverPath =
+      "/uploads/flows/11111111-1111-4111-8111-111111111111/logo-11111111-1111-4111-8111-111111111111.png";
+    const flow = await createFlowWithQuestions(
+      company.id,
+      `appearance-${testRunId}`,
+      FlowStatus.PUBLISHED,
+      {
+        coverImageUrl: localCoverPath,
+        brandImageDisplay: "PROFILE",
+        primaryColor: "#2563EB",
+        backgroundColor: "#FFFFFF",
+        welcomeMessage: "Olá! Vamos encontrar a melhor opção para você."
+      }
+    );
+
+    const response = await request(app.getHttpServer())
+      .get(`/api/public-flows/${company.slug}/${flow.slug}`)
+      .expect(200);
+
+    expect(response.body.flow.appearance).toEqual({
+      coverImageUrl: localCoverPath,
+      brandImageDisplay: "PROFILE",
+      primaryColor: "#2563EB",
+      backgroundColor: "#FFFFFF",
+      backgroundImageUrl: null,
+      externalLinkUrl: null,
+      externalLinkLabel: null,
+      welcomeMessage: "Olá! Vamos encontrar a melhor opção para você."
+    });
   });
 
   it("returns 404 for draft, missing company or missing flow", async () => {
@@ -329,6 +371,140 @@ describe("PublicFlowsController", () => {
     expect(lead.answers.map((answer) => answer.questionId)).toEqual(
       expect.arrayContaining([choiceQuestion.id, textQuestion.id])
     );
+  });
+
+  it("returns a company WhatsApp URL with an encoded deterministic summary", async () => {
+    const company = await createCompany("whatsapp-summary");
+    const flow = await prisma.flow.create({
+      data: {
+        companyId: company.id,
+        name: "Orçamento completo",
+        slug: `whatsapp-summary-${testRunId}`,
+        description: "Resumo para WhatsApp",
+        status: FlowStatus.PUBLISHED,
+        questions: {
+          create: [
+            {
+              label: "Nome",
+              type: "TEXT",
+              required: true,
+              position: 1
+            },
+            {
+              label: "Serviço",
+              type: "SINGLE_CHOICE",
+              required: true,
+              position: 2,
+              options: {
+                create: [
+                  { label: "Gestão de Instagram", value: "instagram", position: 1 },
+                  { label: "Site institucional", value: "site", position: 2 }
+                ]
+              }
+            },
+            {
+              label: "Extras",
+              type: "MULTIPLE_CHOICE",
+              required: false,
+              position: 3,
+              options: {
+                create: [
+                  { label: "Fotos", value: "photos", position: 1 },
+                  { label: "Vídeos", value: "videos", position: 2 }
+                ]
+              }
+            },
+            {
+              label: "Urgente?",
+              type: "BOOLEAN",
+              required: true,
+              position: 4
+            }
+          ]
+        }
+      },
+      include: {
+        questions: {
+          include: {
+            options: true
+          },
+          orderBy: {
+            position: "asc"
+          }
+        }
+      }
+    });
+
+    const response = await request(app.getHttpServer())
+      .post(`/api/public-flows/${company.slug}/${flow.slug}/submissions`)
+      .send({
+        answers: [
+          { questionId: flow.questions[0].id, value: "João Silva" },
+          { questionId: flow.questions[1].id, value: "instagram" },
+          { questionId: flow.questions[2].id, value: ["photos", "videos"] },
+          { questionId: flow.questions[3].id, value: true }
+        ]
+      })
+      .expect(201);
+
+    expect(response.body.whatsapp.available).toBe(true);
+    expect(response.body.whatsapp.url).toContain("https://wa.me/5586999999999");
+
+    const url = new URL(response.body.whatsapp.url);
+    const message = url.searchParams.get("text") ?? "";
+
+    expect(message).toContain('formulário "Orçamento completo"');
+    expect(message).toContain("Nome: João Silva");
+    expect(message).toContain("Serviço: Gestão de Instagram");
+    expect(message).toContain("Extras: Fotos, Vídeos");
+    expect(message).toContain("Urgente?: Sim");
+    expect(message).toContain("Enviado através do LeadFlow.");
+  });
+
+  it("keeps public submission working when company WhatsApp is not configured", async () => {
+    const company = await createCompany("no-whatsapp");
+    await prisma.company.update({
+      where: {
+        id: company.id
+      },
+      data: {
+        whatsappPhone: null
+      }
+    });
+    const flow = await createFlowWithQuestions(
+      company.id,
+      `no-whatsapp-${testRunId}`,
+      FlowStatus.PUBLISHED
+    );
+    const flowWithQuestions = await prisma.flow.findUniqueOrThrow({
+      where: {
+        id: flow.id
+      },
+      include: {
+        questions: {
+          orderBy: {
+            position: "asc"
+          }
+        }
+      }
+    });
+
+    const response = await request(app.getHttpServer())
+      .post(`/api/public-flows/${company.slug}/${flow.slug}/submissions`)
+      .send({
+        answers: [
+          {
+            questionId: flowWithQuestions.questions[0].id,
+            value: "carro"
+          }
+        ]
+      })
+      .expect(201);
+
+    expect(response.body.whatsapp).toEqual({
+      available: false,
+      url: null
+    });
   });
 
   it("rejects invalid public submissions", async () => {

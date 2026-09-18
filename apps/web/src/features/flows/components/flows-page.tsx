@@ -13,6 +13,7 @@ import {
 } from "../lib/flows-api";
 import { buildPublicFlowUrl } from "../lib/public-flow-url";
 import type { Flow, FlowFormValues } from "../types/flow";
+import { CompanyWhatsappSettings } from "./company-whatsapp-settings";
 import { FlowCard } from "./flow-card";
 import { FlowForm } from "./flow-form";
 
@@ -170,6 +171,8 @@ export function FlowsPage() {
       </header>
 
       {pageMessage ? <p className="private-feedback">{pageMessage}</p> : null}
+
+      {session ? <CompanyWhatsappSettings /> : null}
 
       {loadState === "loading" ? <p>Carregando flows...</p> : null}
 

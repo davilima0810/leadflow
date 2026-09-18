@@ -1,6 +1,7 @@
 import { privateApi } from "../../auth/lib/private-api";
 import type {
   Flow,
+  FlowAppearanceFormValues,
   FlowFormValues,
   Question,
   QuestionFormValues
@@ -31,6 +32,36 @@ export function updateFlow(id: string, values: FlowFormValues): Promise<Flow> {
   return privateApi<Flow>(`/flows/${id}`, {
     method: "PATCH",
     body: toPayload(values)
+  });
+}
+
+export function updateFlowAppearance(
+  id: string,
+  values: FlowAppearanceFormValues
+): Promise<Flow> {
+  return privateApi<Flow>(`/flows/${id}`, {
+    method: "PATCH",
+    body: toAppearancePayload(values)
+  });
+}
+
+export function uploadFlowLogo(id: string, file: File): Promise<Flow> {
+  return uploadFlowImage(`/flows/${id}/logo`, file);
+}
+
+export function uploadFlowBackground(id: string, file: File): Promise<Flow> {
+  return uploadFlowImage(`/flows/${id}/background`, file);
+}
+
+export function removeFlowLogo(id: string): Promise<Flow> {
+  return privateApi<Flow>(`/flows/${id}/logo`, {
+    method: "DELETE"
+  });
+}
+
+export function removeFlowBackground(id: string): Promise<Flow> {
+  return privateApi<Flow>(`/flows/${id}/background`, {
+    method: "DELETE"
   });
 }
 
@@ -93,6 +124,29 @@ function toPayload(values: FlowFormValues): FlowPayload {
     slug: values.slug,
     description: values.description.trim() ? values.description : null
   };
+}
+
+function toAppearancePayload(values: FlowAppearanceFormValues) {
+  return {
+    coverImageUrl: values.coverImageUrl.trim() || null,
+    brandImageDisplay: values.brandImageDisplay,
+    primaryColor: values.primaryColor.trim() || null,
+    backgroundColor: values.backgroundColor.trim() || null,
+    backgroundImageUrl: values.backgroundImageUrl.trim() || null,
+    welcomeMessage: values.welcomeMessage.trim() || null,
+    externalLinkUrl: values.externalLinkUrl.trim() || null,
+    externalLinkLabel: values.externalLinkLabel.trim() || null
+  };
+}
+
+function uploadFlowImage(path: string, file: File): Promise<Flow> {
+  const body = new FormData();
+  body.append("file", file);
+
+  return privateApi<Flow>(path, {
+    method: "POST",
+    body
+  });
 }
 
 function toQuestionPayload(values: QuestionFormValues, position: number) {

@@ -5,6 +5,11 @@ import {
   NotFoundException
 } from "@nestjs/common";
 import { QuestionSemanticType, QuestionType } from "@prisma/client";
+import { StorageService } from "../../common/storage/storage.service";
+import {
+  parseLocalFlowAssetPath,
+  type LocalFlowAssetKind
+} from "../../common/storage/storage-url";
 import type { AuthenticatedUser } from "../auth/types/authenticated-user";
 import { CreateQuestionDto } from "../questions/dto/create-question.dto";
 import { ReorderQuestionsDto } from "../questions/dto/reorder-questions.dto";
@@ -14,6 +19,7 @@ import { CreateFlowDto } from "./dto/create-flow.dto";
 import { UpdateFlowDto } from "./dto/update-flow.dto";
 import { FlowRepository } from "./flow.repository";
 import { toFlowResponse } from "./flow-response.mapper";
+import type { UploadedImageFile } from "./types/uploaded-image-file";
 
 const CHOICE_TYPES = [
   QuestionType.SINGLE_CHOICE,
@@ -26,21 +32,35 @@ const SEMANTIC_TYPE_ALLOWED_QUESTION_TYPE = {
   [QuestionSemanticType.CONTACT_EMAIL]: QuestionType.EMAIL
 } as const;
 
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+const ALLOWED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 @Injectable()
 export class FlowsService {
   constructor(
     private readonly flowRepository: FlowRepository,
-    private readonly questionRepository: QuestionRepository
+    private readonly questionRepository: QuestionRepository,
+    private readonly storageService: StorageService
   ) {}
 
   async create(dto: CreateFlowDto, currentUser: AuthenticatedUser) {
     await this.ensureSlugAvailable(currentUser.companyId, dto.slug);
+    this.rejectLocalAssetOnCreate(dto.coverImageUrl);
+    this.rejectLocalAssetOnCreate(dto.backgroundImageUrl);
 
     const flow = await this.flowRepository.create({
       companyId: currentUser.companyId,
       name: dto.name,
       slug: dto.slug,
-      description: dto.description
+      description: dto.description,
+      coverImageUrl: dto.coverImageUrl,
+      brandImageDisplay: dto.brandImageDisplay,
+      primaryColor: dto.primaryColor,
+      backgroundColor: dto.backgroundColor,
+      backgroundImageUrl: dto.backgroundImageUrl,
+      welcomeMessage: dto.welcomeMessage,
+      externalLinkUrl: dto.externalLinkUrl,
+      externalLinkLabel: dto.externalLinkLabel
     });
 
     return toFlowResponse(flow);
@@ -71,11 +91,21 @@ export class FlowsService {
     if (dto.slug) {
       await this.ensureSlugAvailable(currentUser.companyId, dto.slug, id);
     }
+    this.validateFlowAssetReference(id, dto.coverImageUrl, "logo");
+    this.validateFlowAssetReference(id, dto.backgroundImageUrl, "background");
 
     const flow = await this.flowRepository.update(id, currentUser.companyId, {
       name: dto.name,
       slug: dto.slug,
-      description: dto.description
+      description: dto.description,
+      coverImageUrl: dto.coverImageUrl,
+      brandImageDisplay: dto.brandImageDisplay,
+      primaryColor: dto.primaryColor,
+      backgroundColor: dto.backgroundColor,
+      backgroundImageUrl: dto.backgroundImageUrl,
+      welcomeMessage: dto.welcomeMessage,
+      externalLinkUrl: dto.externalLinkUrl,
+      externalLinkLabel: dto.externalLinkLabel
     });
 
     if (!flow) {
@@ -112,6 +142,36 @@ export class FlowsService {
     }
 
     return toFlowResponse(flow);
+  }
+
+  async uploadLogo(
+    id: string,
+    file: UploadedImageFile | undefined,
+    currentUser: AuthenticatedUser
+  ) {
+    return this.uploadFlowImage(id, "logo", "coverImageUrl", file, currentUser);
+  }
+
+  async uploadBackground(
+    id: string,
+    file: UploadedImageFile | undefined,
+    currentUser: AuthenticatedUser
+  ) {
+    return this.uploadFlowImage(
+      id,
+      "background",
+      "backgroundImageUrl",
+      file,
+      currentUser
+    );
+  }
+
+  async removeLogo(id: string, currentUser: AuthenticatedUser) {
+    return this.removeFlowImage(id, "coverImageUrl", currentUser);
+  }
+
+  async removeBackground(id: string, currentUser: AuthenticatedUser) {
+    return this.removeFlowImage(id, "backgroundImageUrl", currentUser);
   }
 
   async addQuestion(
@@ -284,6 +344,97 @@ export class FlowsService {
 
     if (existingFlow && existingFlow.id !== ignoreFlowId) {
       throw new ConflictException("Slug do flow já está em uso.");
+    }
+  }
+
+  private rejectLocalAssetOnCreate(value: string | null | undefined) {
+    if (value && parseLocalFlowAssetPath(value)) {
+      throw new BadRequestException(
+        "Uploads locais devem pertencer a um Flow existente."
+      );
+    }
+  }
+
+  private validateFlowAssetReference(
+    flowId: string,
+    value: string | null | undefined,
+    expectedKind: LocalFlowAssetKind
+  ) {
+    if (!value) {
+      return;
+    }
+
+    const asset = parseLocalFlowAssetPath(value);
+
+    if (!asset) {
+      return;
+    }
+
+    if (asset.flowId !== flowId || asset.kind !== expectedKind) {
+      throw new BadRequestException(
+        "Imagem enviada não pertence a este Flow."
+      );
+    }
+  }
+
+  private async uploadFlowImage(
+    id: string,
+    kind: "logo" | "background",
+    field: "coverImageUrl" | "backgroundImageUrl",
+    file: UploadedImageFile | undefined,
+    currentUser: AuthenticatedUser
+  ) {
+    this.validateImageFile(file);
+    const currentFlow = await this.requireFlow(id, currentUser.companyId);
+    const uploaded = await this.storageService.uploadImage({
+      buffer: file.buffer,
+      flowId: id,
+      kind,
+      mimeType: file.mimetype
+    });
+    const flow = await this.flowRepository.update(id, currentUser.companyId, {
+      [field]: uploaded.url
+    });
+
+    await this.storageService.delete(currentFlow[field]);
+
+    if (!flow) {
+      throw new NotFoundException("Flow não encontrado.");
+    }
+
+    return toFlowResponse(flow);
+  }
+
+  private async removeFlowImage(
+    id: string,
+    field: "coverImageUrl" | "backgroundImageUrl",
+    currentUser: AuthenticatedUser
+  ) {
+    const currentFlow = await this.requireFlow(id, currentUser.companyId);
+    const flow = await this.flowRepository.update(id, currentUser.companyId, {
+      [field]: null
+    });
+
+    await this.storageService.delete(currentFlow[field]);
+
+    if (!flow) {
+      throw new NotFoundException("Flow não encontrado.");
+    }
+
+    return toFlowResponse(flow);
+  }
+
+  private validateImageFile(file: UploadedImageFile | undefined): asserts file is UploadedImageFile {
+    if (!file) {
+      throw new BadRequestException("Arquivo de imagem é obrigatório.");
+    }
+
+    if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException("Formato de imagem inválido.");
+    }
+
+    if (file.size > MAX_IMAGE_BYTES) {
+      throw new BadRequestException("Imagem deve ter no máximo 2 MB.");
     }
   }
 

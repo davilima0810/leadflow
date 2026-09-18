@@ -4,7 +4,7 @@ import { FlowStatus } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
 
 export type PublicFlowRecord = Flow & {
-  company: Pick<Company, "name" | "slug">;
+  company: Pick<Company, "name" | "slug" | "whatsappPhone">;
   questions: Array<Question & { options: QuestionOption[] }>;
 };
 
@@ -28,7 +28,8 @@ export class PublicFlowRepository {
         company: {
           select: {
             name: true,
-            slug: true
+            slug: true,
+            whatsappPhone: true
           }
         },
         questions: {

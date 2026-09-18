@@ -18,6 +18,7 @@ Build the smallest useful product that lets a company publish a conversational q
 10. Structured lead summary generation.
 11. WhatsApp redirect using `wa.me` with a pre-filled message.
 12. Authenticated lead listing for the company.
+13. Basic Flow appearance for public links: uploaded logo, primary color, background color/image, optional welcome message, and optional external link.
 
 ## Suggested Implementation Phases
 
@@ -44,6 +45,8 @@ Build the smallest useful product that lets a company publish a conversational q
 - Publish/unpublish flow.
 - Reorder questions.
 - Public flow lookup by `companySlug + flowSlug`.
+- Basic Flow appearance configuration.
+- Local MVP image uploads through a storage abstraction.
 
 ### Phase 4 - Public Conversation
 
@@ -67,6 +70,7 @@ Contact identity is explicit through `Question.semanticType`. The initial semant
 ## Non-Goals For MVP
 
 - Conditional questions beyond simple future-proof modeling.
+- Visual page builder or advanced theming.
 - Official WhatsApp sending.
 - Real-time updates.
 - Advanced analytics.

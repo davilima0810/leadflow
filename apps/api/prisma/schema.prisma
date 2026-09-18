@@ -22,6 +22,11 @@ enum FlowStatus {
   PUBLISHED
 }
 
+enum BrandImageDisplay {
+  LOGO
+  PROFILE
+}
+
 enum QuestionType {
   TEXT
   TEXTAREA
@@ -75,18 +80,26 @@ model User {
 }
 
 model Flow {
-  id          String     @id @default(uuid()) @db.Uuid
-  companyId   String     @map("company_id") @db.Uuid
-  name        String
-  slug        String
-  description String?
-  status      FlowStatus @default(DRAFT)
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
+  id              String     @id @default(uuid()) @db.Uuid
+  companyId       String     @map("company_id") @db.Uuid
+  name            String
+  slug            String
+  description     String?
+  status          FlowStatus @default(DRAFT)
+  coverImageUrl   String?    @map("cover_image_url")
+  brandImageDisplay BrandImageDisplay @default(LOGO) @map("brand_image_display")
+  primaryColor    String?    @map("primary_color")
+  backgroundColor String?    @map("background_color")
+  backgroundImageUrl String?    @map("background_image_url")
+  welcomeMessage     String?    @map("welcome_message")
+  externalLinkUrl    String?    @map("external_link_url")
+  externalLinkLabel  String?    @map("external_link_label")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
 
-  company   Company    @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  questions Question[]
-  leads     Lead[]
+  company         Company    @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  questions       Question[]
+  leads           Lead[]
 
   @@unique([companyId, slug])
   @@index([companyId])

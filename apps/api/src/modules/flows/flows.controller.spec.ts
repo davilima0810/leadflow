@@ -17,6 +17,11 @@ type FlowResponse = {
   slug: string;
   description: string | null;
   status: "DRAFT" | "PUBLISHED";
+  coverImageUrl: string | null;
+  brandImageDisplay: "LOGO" | "PROFILE";
+  primaryColor: string | null;
+  backgroundColor: string | null;
+  welcomeMessage: string | null;
   questions?: QuestionResponse[];
 };
 
@@ -163,8 +168,239 @@ describe("FlowsController", () => {
       companyId: session.companyId,
       name: "Aluguel de veículo",
       slug: `create-flow-${testRunId}`,
-      status: "DRAFT"
+      status: "DRAFT",
+      coverImageUrl: null,
+      brandImageDisplay: "LOGO",
+      primaryColor: null,
+      backgroundColor: null,
+      welcomeMessage: null
     });
+  });
+
+  it("accepts local storage image paths that belong to the current flow", async () => {
+    const session = await createSession("appearance-local");
+    const flow = await createFlow(session, `appearance-local-${testRunId}`);
+    const coverImageUrl = `/uploads/flows/${flow.id}/logo-11111111-1111-4111-8111-111111111111.jpg`;
+    const backgroundImageUrl = `/uploads/flows/${flow.id}/background-22222222-2222-4222-8222-222222222222.webp`;
+
+    const response = await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({
+        coverImageUrl,
+        backgroundImageUrl,
+        brandImageDisplay: "PROFILE"
+      })
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      coverImageUrl,
+      backgroundImageUrl,
+      brandImageDisplay: "PROFILE"
+    });
+  });
+
+  it("updates and returns flow appearance fields", async () => {
+    const session = await createSession("appearance");
+    const flow = await createFlow(session, `appearance-${testRunId}`);
+
+    const updateResponse = await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({
+        primaryColor: "#2563EB",
+        backgroundColor: "#FFFFFF",
+        coverImageUrl: "https://example.com/brand.webp",
+        brandImageDisplay: "PROFILE",
+        welcomeMessage: "Olá! Vamos encontrar a melhor opção para você.",
+        externalLinkUrl: "https://example.com/catalogo",
+        externalLinkLabel: "Ver catálogo"
+      })
+      .expect(200);
+
+    expect(updateResponse.body).toMatchObject({
+      id: flow.id,
+      primaryColor: "#2563EB",
+      backgroundColor: "#FFFFFF",
+      coverImageUrl: "https://example.com/brand.webp",
+      brandImageDisplay: "PROFILE",
+      welcomeMessage: "Olá! Vamos encontrar a melhor opção para você.",
+      externalLinkUrl: "https://example.com/catalogo",
+      externalLinkLabel: "Ver catálogo"
+    });
+
+    const getResponse = await request(app.getHttpServer())
+      .get(`/api/flows/${flow.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .expect(200);
+
+    expect(getResponse.body).toMatchObject({
+      primaryColor: "#2563EB",
+      backgroundColor: "#FFFFFF",
+      coverImageUrl: "https://example.com/brand.webp",
+      brandImageDisplay: "PROFILE",
+      welcomeMessage: "Olá! Vamos encontrar a melhor opção para você.",
+      externalLinkUrl: "https://example.com/catalogo",
+      externalLinkLabel: "Ver catálogo"
+    });
+
+    const logoResponse = await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({ brandImageDisplay: "LOGO" })
+      .expect(200);
+
+    expect(logoResponse.body).toMatchObject({
+      coverImageUrl: "https://example.com/brand.webp",
+      brandImageDisplay: "LOGO"
+    });
+  });
+
+  it("rejects invalid appearance values", async () => {
+    const session = await createSession("appearance-invalid");
+    const flow = await createFlow(session, `appearance-invalid-${testRunId}`);
+
+    await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({ primaryColor: "red" })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({ backgroundColor: "rgb(255, 255, 255)" })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({ coverImageUrl: "javascript:alert(1)" })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({ welcomeMessage: "x".repeat(281) })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({ externalLinkUrl: "javascript:alert(1)" })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({ brandImageDisplay: "AVATAR" })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({ coverImageUrl: "../../etc/passwd" })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({ backgroundImageUrl: "/uploads/../secret.png" })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({
+        coverImageUrl:
+          "/uploads/flows/00000000-0000-4000-8000-000000000000/logo-11111111-1111-4111-8111-111111111111.jpg"
+      })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .patch(`/api/flows/${flow.id}`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({
+        backgroundImageUrl: `/uploads/flows/${flow.id}/logo-11111111-1111-4111-8111-111111111111.jpg`
+      })
+      .expect(400);
+  });
+
+  it("uploads, replaces and removes flow logo for the owning company", async () => {
+    const session = await createSession("upload-logo");
+    const flow = await createFlow(session, `upload-logo-${testRunId}`);
+    const image = Buffer.from("fake-png");
+
+    const uploadResponse = await request(app.getHttpServer())
+      .post(`/api/flows/${flow.id}/logo`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .attach("file", image, {
+        filename: "logo.png",
+        contentType: "image/png"
+      })
+      .expect(201);
+
+    expect(uploadResponse.body.coverImageUrl).toMatch(
+      new RegExp(`^/uploads/flows/${flow.id}/logo-.*\\.png$`)
+    );
+
+    const removeResponse = await request(app.getHttpServer())
+      .delete(`/api/flows/${flow.id}/logo`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .expect(200);
+
+    expect(removeResponse.body.coverImageUrl).toBeNull();
+  });
+
+  it("uploads background only for a flow owned by the authenticated company", async () => {
+    const companyA = await createSession("upload-bg-a");
+    const companyB = await createSession("upload-bg-b");
+    const flowB = await createFlow(companyB, `upload-bg-b-${testRunId}`);
+
+    await request(app.getHttpServer())
+      .post(`/api/flows/${flowB.id}/background`)
+      .set("Authorization", `Bearer ${companyA.accessToken}`)
+      .attach("file", Buffer.from("fake-webp"), {
+        filename: "background.webp",
+        contentType: "image/webp"
+      })
+      .expect(404);
+
+    const response = await request(app.getHttpServer())
+      .post(`/api/flows/${flowB.id}/background`)
+      .set("Authorization", `Bearer ${companyB.accessToken}`)
+      .attach("file", Buffer.from("fake-webp"), {
+        filename: "background.webp",
+        contentType: "image/webp"
+      })
+      .expect(201);
+
+    expect(response.body.backgroundImageUrl).toMatch(
+      new RegExp(`^/uploads/flows/${flowB.id}/background-.*\\.webp$`)
+    );
+  });
+
+  it("rejects invalid upload MIME and files above 2 MB", async () => {
+    const session = await createSession("upload-invalid");
+    const flow = await createFlow(session, `upload-invalid-${testRunId}`);
+
+    await request(app.getHttpServer())
+      .post(`/api/flows/${flow.id}/logo`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .attach("file", Buffer.from("<svg></svg>"), {
+        filename: "logo.svg",
+        contentType: "image/svg+xml"
+      })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .post(`/api/flows/${flow.id}/logo`)
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .attach("file", Buffer.alloc(2 * 1024 * 1024 + 1), {
+        filename: "large.png",
+        contentType: "image/png"
+      })
+      .expect(413);
   });
 
   it("lists only flows from the authenticated company", async () => {
@@ -201,7 +437,7 @@ describe("FlowsController", () => {
     await request(app.getHttpServer())
       .patch(`/api/flows/${flowB.id}`)
       .set("Authorization", `Bearer ${companyA.accessToken}`)
-      .send({ name: "Tentativa inválida" })
+      .send({ brandImageDisplay: "PROFILE" })
       .expect(404);
   });
 

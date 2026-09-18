@@ -1,4 +1,5 @@
 export type FlowStatus = "DRAFT" | "PUBLISHED";
+export type BrandImageDisplay = "LOGO" | "PROFILE";
 export type QuestionType =
   | "TEXT"
   | "TEXTAREA"
@@ -45,6 +46,14 @@ export type Flow = {
   slug: string;
   description: string | null;
   status: FlowStatus;
+  coverImageUrl: string | null;
+  brandImageDisplay: BrandImageDisplay;
+  primaryColor: string | null;
+  backgroundColor: string | null;
+  backgroundImageUrl: string | null;
+  welcomeMessage: string | null;
+  externalLinkUrl: string | null;
+  externalLinkLabel: string | null;
   createdAt: string;
   updatedAt: string;
   questions?: Question[];
@@ -54,6 +63,17 @@ export type FlowFormValues = {
   name: string;
   slug: string;
   description: string;
+};
+
+export type FlowAppearanceFormValues = {
+  coverImageUrl: string;
+  brandImageDisplay: BrandImageDisplay;
+  primaryColor: string;
+  backgroundColor: string;
+  backgroundImageUrl: string;
+  welcomeMessage: string;
+  externalLinkUrl: string;
+  externalLinkLabel: string;
 };
 
 export type QuestionFormValues = {

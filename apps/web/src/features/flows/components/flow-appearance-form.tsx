@@ -241,7 +241,7 @@ export function FlowAppearanceForm({
             </div>
             {flow.backgroundImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img alt="" src={flow.backgroundImageUrl} />
+              <img alt="" src={flow.backgroundImageUrl} className="backgroundImageUrl"/>
             ) : null}
             <div className="upload-actions">
               <label className="private-secondary-button">
